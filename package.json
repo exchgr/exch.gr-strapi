@@ -11,9 +11,10 @@
   },
   "devDependencies": {},
   "dependencies": {
-    "@strapi/strapi": "4.6.2",
-    "@strapi/plugin-users-permissions": "4.6.2",
+    "@strapi/plugin-graphql": "^4.6.2",
     "@strapi/plugin-i18n": "4.6.2",
+    "@strapi/plugin-users-permissions": "4.6.2",
+    "@strapi/strapi": "4.6.2",
     "pg": "8.8.0"
   },
   "author": {
