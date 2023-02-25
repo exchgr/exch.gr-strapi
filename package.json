@@ -1,31 +1,35 @@
 {
-  "name": "exch-gr",
-  "private": true,
-  "version": "0.1.0",
-  "description": "exch.gr Strapi blog",
-  "scripts": {
-    "develop": "strapi develop",
-    "start": "strapi start",
-    "build": "strapi build",
-    "strapi": "strapi"
-  },
-  "devDependencies": {},
-  "dependencies": {
-    "@strapi/plugin-graphql": "^4.6.2",
-    "@strapi/plugin-i18n": "4.6.2",
-    "@strapi/plugin-users-permissions": "4.6.2",
-    "@strapi/strapi": "4.6.2",
-    "pg": "8.8.0"
-  },
-  "author": {
-    "name": "Elle Mundy"
-  },
-  "strapi": {
-    "uuid": "8826543d-b2b3-4d24-a0cd-f38d0c34f125"
-  },
-  "engines": {
-    "node": ">=14.19.1 <=18.x.x",
-    "npm": ">=6.0.0"
-  },
-  "license": "MIT"
+	"name": "exch-gr",
+	"private": true,
+	"version": "0.1.0",
+	"description": "exch.gr Strapi blog",
+	"scripts": {
+		"develop": "strapi develop",
+		"start": "strapi start",
+		"build": "strapi build",
+		"strapi": "strapi",
+		"11ty": "npx @11ty/eleventy",
+		"11ty-serve": "npx @11ty/eleventy --serve"
+	},
+	"devDependencies": {},
+	"dependencies": {
+		"@strapi/plugin-graphql": "^4.6.2",
+		"@strapi/plugin-i18n": "4.6.2",
+		"@strapi/plugin-users-permissions": "4.6.2",
+		"@strapi/strapi": "4.6.2",
+		"pg": "8.8.0",
+		"@11ty/eleventy": "~2.0.0",
+		"node-fetch": "~3.3.0"
+	},
+	"author": {
+		"name": "Elle Mundy"
+	},
+	"strapi": {
+		"uuid": "8826543d-b2b3-4d24-a0cd-f38d0c34f125"
+	},
+	"engines": {
+		"node": ">=14.19.1 <=18.x.x",
+		"npm": ">=6.0.0"
+	},
+	"license": "MIT"
 }
