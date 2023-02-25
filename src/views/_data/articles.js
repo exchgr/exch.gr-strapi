@@ -9,7 +9,7 @@ module.exports = async () => {
 			},
 			body: JSON.stringify({
 				query: `{
-					articles {
+					articles(sort: "publishedAt:DESC") {
 						data {
 							id
 							attributes {
