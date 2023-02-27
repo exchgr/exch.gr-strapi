@@ -19,6 +19,14 @@ module.exports = async () => {
 								slug
 								publishedAt
 								updatedAt
+								tags(sort: "name:ASC") {
+									data {
+										attributes {
+											name
+											slug
+										}
+									}
+								}
 							}
 						}
 					}

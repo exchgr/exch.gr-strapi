@@ -14,5 +14,8 @@ page_title: Articles
   {{ article.body }}
 
   last updated at {{ article.updatedAt }}
+  {% for tag in article.tags.data %}
+    [{{ tag.attributes.name }}](/tags/{{ tag.attributes.slug }})
+  {% endfor %}
 </article>
 {% endfor %}
