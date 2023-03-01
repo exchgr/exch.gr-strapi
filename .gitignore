@@ -114,3 +114,15 @@ dist
 build
 .strapi-updater.json
 _site/
+
+############################
+# Yarn
+############################
+
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

@@ -11,15 +11,14 @@
 		"11ty": "npx @11ty/eleventy",
 		"11ty-serve": "npx @11ty/eleventy --serve"
 	},
-	"devDependencies": {},
 	"dependencies": {
+		"@11ty/eleventy": "~2.0.0",
 		"@strapi/plugin-graphql": "~4.7.0",
 		"@strapi/plugin-i18n": "~4.7.0",
 		"@strapi/plugin-users-permissions": "~4.7.0",
 		"@strapi/strapi": "~4.7.0",
-		"pg": "8.8.0",
-		"@11ty/eleventy": "~2.0.0",
-		"node-fetch": "~3.3.0"
+		"node-fetch": "~3.3.0",
+		"pg": "8.8.0"
 	},
 	"author": {
 		"name": "Elle Mundy"
@@ -31,5 +30,6 @@
 		"node": ">=14.19.1 <=18.x.x",
 		"npm": ">=6.0.0"
 	},
-	"license": "MIT"
+	"license": "MIT",
+	"packageManager": "yarn@3.4.1"
 }
