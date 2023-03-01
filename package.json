@@ -1,5 +1,5 @@
 {
-	"name": "exch-gr",
+	"name": "exch-gr-strapi",
 	"private": true,
 	"version": "0.1.0",
 	"description": "exch.gr Strapi blog",
@@ -7,17 +7,13 @@
 		"develop": "strapi develop",
 		"start": "strapi start",
 		"build": "strapi build",
-		"strapi": "strapi",
-		"11ty": "npx @11ty/eleventy",
-		"11ty-serve": "npx @11ty/eleventy --serve"
+		"strapi": "strapi"
 	},
 	"dependencies": {
-		"@11ty/eleventy": "~2.0.0",
 		"@strapi/plugin-graphql": "~4.7.0",
 		"@strapi/plugin-i18n": "~4.7.0",
 		"@strapi/plugin-users-permissions": "~4.7.0",
 		"@strapi/strapi": "~4.7.0",
-		"node-fetch": "~3.3.0",
 		"pg": "8.8.0"
 	},
 	"author": {
