@@ -21,6 +21,13 @@ jobs:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: "cache terraform state"
+        uses: actions/cache@v3
+        with:
+          key: ${{ hashFiles('terraform/**') }}
+          path: |
+            terraform/.terraform
+            terraform/.terraform.lock.hcl
       - name: "terraform init"
         run: terraform init
       - name: "terraform apply"
