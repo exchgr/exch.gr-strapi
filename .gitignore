@@ -126,3 +126,10 @@ _site/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+############################
+# Terraform
+############################
+
+.terraform/
+.terraform.lock.hcl
