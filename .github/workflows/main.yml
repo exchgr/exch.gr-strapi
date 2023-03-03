@@ -1,0 +1,21 @@
+name: Deploy
+run-name: ${{ github.actor }} is deploying
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "setup terraform"
+        uses: hashicorp/setup-terraform@v2
+      - name: "authenticate with aws"
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume:
+          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: "apply terraform"
+        run: terraform apply -auto-approve
