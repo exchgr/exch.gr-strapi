@@ -29,7 +29,7 @@ jobs:
     needs: deploy-infra
     runs-on: ubuntu-latest
     env:
-      IMAGE_TAG: 361925421500.dkr.ecr.us-east-1.amazonaws.com/exch-gr-strapi:${{ github.sha }}
+      IMAGE_TAG: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/exch-gr-strapi:${{ github.sha }}
     steps:
       - name: "checkout"
         uses: actions/checkout@v3
