@@ -36,7 +36,7 @@ jobs:
     needs: deploy-infra
     runs-on: ubuntu-latest
     env:
-      IMAGE_TAG_BASE: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/exch-gr-strapi
+      IMAGE_TAG: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/exch-gr-strapi
     steps:
       - name: "checkout"
         uses: actions/checkout@v3
@@ -48,14 +48,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - name: "log into ecr"
         uses: aws-actions/amazon-ecr-login@v1
-      - name: "pull previous image"
-        continue-on-error: true
-        run: docker pull ${{ env.IMAGE_TAG_BASE }}
-      - name: "build image"
-        run: |
-          docker build -t ${{ env.IMAGE_TAG_BASE }} .
-          docker tag ${{ env.IMAGE_TAG_BASE }} ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
-      - name: "push image"
-        run: |
-          docker push ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
-          docker push ${{ env.IMAGE_TAG_BASE }}:latest
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_TAG }}:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_TAG }}:latest
+          cache-to: type=inline
