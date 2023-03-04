@@ -19,4 +19,4 @@ COPY . .
 
 RUN yarn build
 
-ENTRYPOINT ["yarn", "start"]
+CMD ["yarn", "start"]
