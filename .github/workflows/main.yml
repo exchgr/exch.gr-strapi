@@ -28,8 +28,6 @@ jobs:
           path: |
             terraform/.terraform
             terraform/.terraform.lock.hcl
-      - name: "terraform init"
-        run: terraform init
       - name: "terraform apply"
         run: terraform apply -auto-approve
   build-and-push-image:
