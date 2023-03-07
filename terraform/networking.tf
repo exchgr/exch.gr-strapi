@@ -51,3 +51,7 @@ resource "aws_nat_gateway" "exch-gr" {
 	allocation_id = aws_eip.exch-gr.id
 	depends_on = [aws_internet_gateway.exch-gr]
 }
+
+resource "aws_route_table" "exch-gr" {
+	vpc_id = aws_vpc.exch-gr.id
+}
