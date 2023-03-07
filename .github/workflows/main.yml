@@ -33,6 +33,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: terraform init
       - name: "terraform apply"
+        if: steps.cache.outputs.cache-hit != 'true'
         run: terraform apply -auto-approve
   build-and-push-image:
     needs: deploy-infra
