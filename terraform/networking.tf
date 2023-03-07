@@ -55,3 +55,13 @@ resource "aws_nat_gateway" "exch-gr" {
 resource "aws_route_table" "exch-gr" {
 	vpc_id = aws_vpc.exch-gr.id
 }
+
+resource "aws_route_table_association" "exch-gr-public" {
+	route_table_id = aws_route_table.exch-gr.id
+	subnet_id = aws_subnet.exch-gr-public.id
+}
+
+resource "aws_route_table_association" "exch-gr-private" {
+	route_table_id = aws_route_table.exch-gr.id
+	subnet_id = aws_subnet.exch-gr-private.id
+}
