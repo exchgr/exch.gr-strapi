@@ -27,3 +27,11 @@ resource "aws_subnet" "exch-gr-private" {
 		Name = "exch-gr-private"
 	}
 }
+
+resource "aws_internet_gateway" "exch-gr" {
+	vpc_id = aws_vpc.exch-gr.id
+
+	tags = {
+		Name = "exch-gr"
+	}
+}
