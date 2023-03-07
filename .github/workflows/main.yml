@@ -1,5 +1,5 @@
 name: Deploy
-run-name: ${{ github.actor }} is deploying
+run-name: "${{ github.actor }} is deploying: ${{ github.event.head_commit.message }}"
 on:
   push:
     branches:
