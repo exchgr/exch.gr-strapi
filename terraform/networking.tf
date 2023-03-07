@@ -52,16 +52,32 @@ resource "aws_nat_gateway" "exch-gr" {
 	depends_on = [aws_internet_gateway.exch-gr]
 }
 
-resource "aws_route_table" "exch-gr" {
+resource "aws_route_table" "exch-gr-public" {
 	vpc_id = aws_vpc.exch-gr.id
 }
 
+resource "aws_route" "exch-gr-public" {
+	destination_cidr_block = "0.0.0.0/0"
+	route_table_id = aws_route_table.exch-gr-public.id
+	gateway_id = aws_internet_gateway.exch-gr.id
+}
+
 resource "aws_route_table_association" "exch-gr-public" {
-	route_table_id = aws_route_table.exch-gr.id
+	route_table_id = aws_route_table.exch-gr-public.id
 	subnet_id = aws_subnet.exch-gr-public.id
 }
 
+resource "aws_route_table" "exch-gr-private" {
+	vpc_id = aws_vpc.exch-gr.id
+}
+
+resource "aws_route" "exch-gr-private" {
+	destination_cidr_block = "0.0.0.0/0"
+	route_table_id = aws_route_table.exch-gr-private.id
+	nat_gateway_id = aws_nat_gateway.exch-gr.id
+}
+
 resource "aws_route_table_association" "exch-gr-private" {
-	route_table_id = aws_route_table.exch-gr.id
+	route_table_id = aws_route_table.exch-gr-private.id
 	subnet_id = aws_subnet.exch-gr-private.id
 }
