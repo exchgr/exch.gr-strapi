@@ -44,3 +44,10 @@ resource "aws_eip" "exch-gr" {
 		Name = "exch-gr"
 	}
 }
+
+resource "aws_nat_gateway" "exch-gr" {
+	subnet_id = aws_subnet.exch-gr-public.id
+	connectivity_type = "public"
+	allocation_id = aws_eip.exch-gr.id
+	depends_on = [aws_internet_gateway.exch-gr]
+}
