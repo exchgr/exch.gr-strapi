@@ -35,3 +35,12 @@ resource "aws_internet_gateway" "exch-gr" {
 		Name = "exch-gr"
 	}
 }
+
+resource "aws_eip" "exch-gr" {
+	vpc = true
+	depends_on = [aws_internet_gateway.exch-gr]
+
+	tags = {
+		Name = "exch-gr"
+	}
+}
