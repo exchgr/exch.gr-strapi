@@ -81,3 +81,22 @@ resource "aws_route_table_association" "exch-gr-private" {
 	route_table_id = aws_route_table.exch-gr-private.id
 	subnet_id = aws_subnet.exch-gr-private.id
 }
+
+resource "aws_security_group" "exch-gr" {
+	name = "exch-gr"
+	vpc_id = aws_vpc.exch-gr.id
+
+	ingress {
+		protocol  = "tcp"
+		from_port = 443
+		to_port   = 1337
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
+	ingress {
+		protocol  = "udp"
+		from_port = 443
+		to_port   = 1337
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+}
