@@ -50,10 +50,18 @@ resource "aws_nat_gateway" "exch-gr" {
 	connectivity_type = "public"
 	allocation_id = aws_eip.exch-gr.id
 	depends_on = [aws_internet_gateway.exch-gr]
+
+	tags = {
+		Name = "exch-gr"
+	}
 }
 
 resource "aws_route_table" "exch-gr-public" {
 	vpc_id = aws_vpc.exch-gr.id
+
+	tags = {
+		Name = "exch-gr-public"
+	}
 }
 
 resource "aws_route" "exch-gr-public" {
@@ -69,6 +77,10 @@ resource "aws_route_table_association" "exch-gr-public" {
 
 resource "aws_route_table" "exch-gr-private" {
 	vpc_id = aws_vpc.exch-gr.id
+
+	tags = {
+		Name = "exch-gr-private"
+	}
 }
 
 resource "aws_route" "exch-gr-private" {
