@@ -13,7 +13,7 @@ resource "aws_subnet" "exch-gr-public-us-east-1a" {
 	map_public_ip_on_launch = true
 
 	tags = {
-		Name = "exch-gr-public"
+		Name = "exch-gr-public-us-east-1a"
 	}
 }
 
@@ -24,7 +24,7 @@ resource "aws_subnet" "exch-gr-public-us-east-1b" {
 	map_public_ip_on_launch = true
 
 	tags = {
-		Name = "exch-gr-public"
+		Name = "exch-gr-public-us-east-1b"
 	}
 }
 
@@ -35,7 +35,7 @@ resource "aws_subnet" "exch-gr-private-us-east-1a" {
 	map_public_ip_on_launch = false
 
 	tags = {
-		Name = "exch-gr-private"
+		Name = "exch-gr-private-us-east-1a"
 	}
 }
 
@@ -46,7 +46,7 @@ resource "aws_subnet" "exch-gr-private-us-east-1b" {
 	map_public_ip_on_launch = false
 
 	tags = {
-		Name = "exch-gr-private"
+		Name = "exch-gr-private-us-east-1b"
 	}
 }
 
@@ -63,7 +63,7 @@ resource "aws_eip" "exch-gr-us-east-1a" {
 	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
 	tags = {
-		Name = "exch-gr"
+		Name = "exch-gr-us-east-1a"
 	}
 }
 
@@ -72,7 +72,7 @@ resource "aws_eip" "exch-gr-us-east-1b" {
 	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
 	tags = {
-		Name = "exch-gr"
+		Name = "exch-gr-us-east-1b"
 	}
 }
 
@@ -83,7 +83,7 @@ resource "aws_nat_gateway" "exch-gr-nat-gateway-us-east-1a" {
 	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
 	tags = {
-		Name = "exch-gr-nat-gateway"
+		Name = "exch-gr-nat-gateway-us-east-1a"
 	}
 }
 
@@ -94,7 +94,7 @@ resource "aws_nat_gateway" "exch-gr-nat-gateway-us-east-1b" {
 	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
 	tags = {
-		Name = "exch-gr-nat-gateway"
+		Name = "exch-gr-nat-gateway-us-east-1b"
 	}
 }
 
@@ -126,7 +126,7 @@ resource "aws_route_table" "exch-gr-private-us-east-1a" {
 	vpc_id = aws_vpc.exch-gr.id
 
 	tags = {
-		Name = "exch-gr-private"
+		Name = "exch-gr-private-us-east-1a"
 	}
 }
 
@@ -134,7 +134,7 @@ resource "aws_route_table" "exch-gr-private-us-east-1b" {
 	vpc_id = aws_vpc.exch-gr.id
 
 	tags = {
-		Name = "exch-gr-private"
+		Name = "exch-gr-private-us-east-1b"
 	}
 }
 
