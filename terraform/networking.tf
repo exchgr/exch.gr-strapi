@@ -28,31 +28,31 @@ resource "aws_subnet" "exch-gr-private" {
 	}
 }
 
-resource "aws_internet_gateway" "exch-gr" {
+resource "aws_internet_gateway" "exch-gr-internet-gateway" {
 	vpc_id = aws_vpc.exch-gr.id
 
 	tags = {
-		Name = "exch-gr"
+		Name = "exch-gr-internet-gateway"
 	}
 }
 
 resource "aws_eip" "exch-gr" {
 	vpc = true
-	depends_on = [aws_internet_gateway.exch-gr]
+	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
 	tags = {
 		Name = "exch-gr"
 	}
 }
 
-resource "aws_nat_gateway" "exch-gr" {
+resource "aws_nat_gateway" "exch-gr-nat-gateway" {
 	subnet_id = aws_subnet.exch-gr-public.id
 	connectivity_type = "public"
 	allocation_id = aws_eip.exch-gr.id
-	depends_on = [aws_internet_gateway.exch-gr]
+	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
 	tags = {
-		Name = "exch-gr"
+		Name = "exch-gr-nat-gateway"
 	}
 }
 
@@ -67,7 +67,7 @@ resource "aws_route_table" "exch-gr-public" {
 resource "aws_route" "exch-gr-public" {
 	destination_cidr_block = "0.0.0.0/0"
 	route_table_id = aws_route_table.exch-gr-public.id
-	gateway_id = aws_internet_gateway.exch-gr.id
+	gateway_id = aws_internet_gateway.exch-gr-internet-gateway.id
 }
 
 resource "aws_route_table_association" "exch-gr-public" {
@@ -86,7 +86,7 @@ resource "aws_route_table" "exch-gr-private" {
 resource "aws_route" "exch-gr-private" {
 	destination_cidr_block = "0.0.0.0/0"
 	route_table_id = aws_route_table.exch-gr-private.id
-	nat_gateway_id = aws_nat_gateway.exch-gr.id
+	nat_gateway_id = aws_nat_gateway.exch-gr-nat-gateway.id
 }
 
 resource "aws_route_table_association" "exch-gr-private" {
