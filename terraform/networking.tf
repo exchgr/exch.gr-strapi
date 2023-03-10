@@ -177,4 +177,15 @@ resource "aws_security_group" "exch-gr" {
 		to_port   = 1337
 		cidr_blocks = ["0.0.0.0/0"]
 	}
+
+	# postgres rds aurora
+	egress {
+		protocol  = "tcp"
+		from_port = 5432
+		to_port   = 5432
+		cidr_blocks = [
+			aws_subnet.exch-gr-private-us-east-1a.cidr_block,
+			aws_subnet.exch-gr-private-us-east-1b.cidr_block,
+		]
+	}
 }
