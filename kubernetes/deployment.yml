@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: exch-gr-strapi
+spec:
+  selector:
+    matchLabels:
+      run: exch-gr-strapi
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: exch-gr-strapi
+    spec:
+      containers:
+        - name: exch-gr-strapi
+          image: 361925421500.dkr.ecr.us-east-1.amazonaws.com/exch-gr-strapi
+          resources:
+            requests:
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+          ports:
+            - containerPort: 1337

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: exch-gr
+  labels:
+    run: exch-gr-strapi
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb-ip"
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+  selector:
+    run: exch-gr-strapi
