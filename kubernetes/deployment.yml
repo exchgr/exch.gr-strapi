@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: exch-gr-strapi
+  name: $APP_NAME
 spec:
   selector:
     matchLabels:
-      run: exch-gr-strapi
+      run: $APP_NAME
   replicas: 1
   template:
     metadata:
       labels:
-        run: exch-gr-strapi
+        run: $APP_NAME
     spec:
       containers:
-        - name: exch-gr-strapi
-          image: 361925421500.dkr.ecr.us-east-1.amazonaws.com/exch-gr-strapi
+        - name: $APP_NAME
+          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$APP_NAME
           resources:
             requests:
               memory: 512Mi
