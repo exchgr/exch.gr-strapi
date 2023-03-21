@@ -21,4 +21,31 @@ spec:
             limits:
               memory: 1Gi
           ports:
-            - containerPort: 1337
+            - containerPort: $PORT
+          env:
+            - name: HOST
+              value: "${HOST}"
+            - name: PORT
+              value: "${PORT}"
+            - name: APP_KEYS
+              value: "${APP_KEYS}"
+            - name: API_TOKEN_SALT
+              value: "${API_TOKEN_SALT}"
+            - name: ADMIN_JWT_SECRET
+              value: "${ADMIN_JWT_SECRET}"
+            - name: DATABASE_CLIENT
+              value: "${DATABASE_CLIENT}"
+            - name: DATABASE_HOST
+              value: "${DATABASE_HOST}"
+            - name: DATABASE_PORT
+              value: "${DATABASE_PORT}"
+            - name: DATABASE_NAME
+              value: "${DATABASE_NAME}"
+            - name: DATABASE_USERNAME
+              value: "${DATABASE_USERNAME}"
+            - name: DATABASE_PASSWORD
+              value: "${DATABASE_PASSWORD}"
+            - name: DATABASE_SSL
+              value: "${DATABASE_SSL}"
+            - name: JWT_SECRET
+              value: "${JWT_SECRET}"
