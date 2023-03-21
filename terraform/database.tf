@@ -31,9 +31,11 @@ resource "aws_rds_cluster" "exch-gr" {
 	vpc_security_group_ids = [aws_security_group.exch-gr.id]
 
 	availability_zones = [
-		"us-east-1a",
-		"us-east-1b",
+		aws_subnet.exch-gr-private-us-east-1a.availability_zone,
+		aws_subnet.exch-gr-private-us-east-1b.availability_zone,
 	]
+
+	final_snapshot_identifier = "exch-gr-final-snapshot"
 }
 
 resource "aws_rds_cluster_instance" "exch-gr" {
