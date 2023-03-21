@@ -35,3 +35,12 @@ resource "aws_rds_cluster" "exch-gr" {
 		"us-east-1b",
 	]
 }
+
+resource "aws_rds_cluster_instance" "exch-gr" {
+	count = 1
+	identifier = "exch-gr-${count.index}"
+	cluster_identifier = aws_rds_cluster.exch-gr.id
+	instance_class = "db.t4g.micro"
+	engine = aws_rds_cluster.exch-gr.engine
+	engine_version = aws_rds_cluster.exch-gr.engine_version
+}
