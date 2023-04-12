@@ -85,5 +85,6 @@ resource "kubernetes_service_account" "aws-load-balancer-controller" {
 		annotations = {
 			"eks.amazonaws.com/role-arn" = "aws-load-balancer-controller-service-account"
 		}
+		namespace = "kube-system"
 	}
 }
