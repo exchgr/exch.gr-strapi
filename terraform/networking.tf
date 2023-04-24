@@ -200,3 +200,11 @@ resource "aws_security_group" "exch-gr" {
 		]
 	}
 }
+
+output "elastic-ip-allocation-id-exch-gr-us-east-1a" {
+	value = aws_eip.exch-gr-us-east-1a.allocation_id
+}
+
+output "elastic-ip-allocation-id-exch-gr-us-east-1b" {
+	value = aws_eip.exch-gr-us-east-1b.allocation_id
+}

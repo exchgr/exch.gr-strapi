@@ -23,6 +23,8 @@ jobs:
         uses: actions/checkout@v3
       - name: "setup terraform"
         uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
       - name: "fetch kubeconfig"
         run: |
           mkdir -p ~/.kube
@@ -47,6 +49,12 @@ jobs:
       - name: "terraform apply"
         if: steps.cache.outputs.cache-hit != 'true'
         run: terraform apply -auto-approve
+      - name: "terraform output 1a"
+        id: terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1a
+        run: echo "elastic-ip-allocation-id-exch-gr-us-east-1a=$(terraform output -raw elastic-ip-allocation-id-exch-gr-us-east-1a)" >> $GITHUB_OUTPUT
+      - name: "terraform output 1b"
+        id: terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1b
+        run: echo "elastic-ip-allocation-id-exch-gr-us-east-1b=$(terraform output -raw elastic-ip-allocation-id-exch-gr-us-east-1b)" >> $GITHUB_OUTPUT
   build-and-push-image:
     needs: deploy-infra
     runs-on: ubuntu-latest
@@ -86,7 +94,9 @@ jobs:
           cache-to: type=registry,ref=${{ env.GHCR_IMAGE_TAG }}:latest,mode=max
           platforms: ${{ vars.TARGETOS }}/${{ vars.TARGETARCH }}
   apply-kubernetes:
-    needs: build-and-push-image
+    needs:
+      - build-and-push-image
+      - deploy-infra
     runs-on: ubuntu-latest
     env:
       HOST: ${{ vars.HOST }}
@@ -102,6 +112,8 @@ jobs:
       DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       DATABASE_SSL: ${{ vars.DATABASE_SSL }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1A: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-us-east-1a }}
+      ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1B: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-us-east-1b }}
     steps:
       - name: "checkout"
         uses: actions/checkout@v3
@@ -121,3 +133,4 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
       - name: "apply kubernetes manifests"
         run: "kubernetes/apply.sh"
+      - run: "echo $ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1A $ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1B"

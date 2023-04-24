@@ -6,6 +6,7 @@ metadata:
     run: $APP_NAME
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "nlb-ip"
+    service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "$ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1A,$ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1B"
 spec:
   type: LoadBalancer
   ports:
