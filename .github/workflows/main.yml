@@ -18,6 +18,9 @@ jobs:
     defaults:
       run:
         working-directory: terraform
+    outputs:
+      elastic-ip-allocation-id-exch-gr-us-east-1a: ${{ steps.terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1a.outputs.output }}
+      elastic-ip-allocation-id-exch-gr-us-east-1b: ${{ steps.terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1b.outputs.output }}
     steps:
       - name: "checkout"
         uses: actions/checkout@v3
@@ -51,10 +54,10 @@ jobs:
         run: terraform apply -auto-approve
       - name: "terraform output 1a"
         id: terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1a
-        run: echo "elastic-ip-allocation-id-exch-gr-us-east-1a=$(terraform output -raw elastic-ip-allocation-id-exch-gr-us-east-1a)" >> $GITHUB_OUTPUT
+        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-exch-gr-us-east-1a)" >> $GITHUB_OUTPUT
       - name: "terraform output 1b"
         id: terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1b
-        run: echo "elastic-ip-allocation-id-exch-gr-us-east-1b=$(terraform output -raw elastic-ip-allocation-id-exch-gr-us-east-1b)" >> $GITHUB_OUTPUT
+        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-exch-gr-us-east-1b)" >> $GITHUB_OUTPUT
   build-and-push-image:
     needs: deploy-infra
     runs-on: ubuntu-latest
@@ -133,4 +136,4 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
       - name: "apply kubernetes manifests"
         run: "kubernetes/apply.sh"
-      - run: "echo $ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1A $ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1B"
+      - run: echo 1 $ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1A 2 $ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1B 3 ${{ needs.deploy-infra.outputs }} 4 ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-us-east-1a }} 5 ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-us-east-1a.output }}
