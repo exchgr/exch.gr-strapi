@@ -12,7 +12,8 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - port: 443
+    - port: $POD_PORT
+      targetPort: $CONTAINER_PORT
       protocol: TCP
   selector:
     run: $APP_NAME
