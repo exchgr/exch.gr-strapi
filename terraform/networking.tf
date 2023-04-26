@@ -14,6 +14,7 @@ resource "aws_subnet" "exch-gr-public-us-east-1a" {
 
 	tags = {
 		Name = "exch-gr-public-us-east-1a"
+		"kubernetes.io/role/elb" = 1
 	}
 }
 
@@ -25,6 +26,7 @@ resource "aws_subnet" "exch-gr-public-us-east-1b" {
 
 	tags = {
 		Name = "exch-gr-public-us-east-1b"
+		"kubernetes.io/role/elb" = 1
 	}
 }
 
