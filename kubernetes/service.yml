@@ -8,7 +8,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-    service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "$ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1A,$ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1B"
+    service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "$ELASTIC_IP_ALLOCATION_ID_EXCH_GR_NLB_US_EAST_1A,$ELASTIC_IP_ALLOCATION_ID_EXCH_GR_NLB_US_EAST_1B"
 spec:
   type: LoadBalancer
   ports:

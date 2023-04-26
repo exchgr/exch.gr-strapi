@@ -60,6 +60,8 @@ resource "aws_internet_gateway" "exch-gr-internet-gateway" {
 	}
 }
 
+# Elastic IPs for use in the NAT gateway to provide internet access
+
 resource "aws_eip" "exch-gr-us-east-1a" {
 	vpc = true
 	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
@@ -70,6 +72,26 @@ resource "aws_eip" "exch-gr-us-east-1a" {
 }
 
 resource "aws_eip" "exch-gr-us-east-1b" {
+	vpc = true
+	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
+
+	tags = {
+		Name = "exch-gr-us-east-1b"
+	}
+}
+
+# Elastic IPs for use in the NLB
+
+resource "aws_eip" "exch-gr-nlb-us-east-1a" {
+	vpc = true
+	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
+
+	tags = {
+		Name = "exch-gr-us-east-1a"
+	}
+}
+
+resource "aws_eip" "exch-gr-nlb-us-east-1b" {
 	vpc = true
 	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
@@ -203,10 +225,10 @@ resource "aws_security_group" "exch-gr" {
 	}
 }
 
-output "elastic-ip-allocation-id-exch-gr-us-east-1a" {
-	value = aws_eip.exch-gr-us-east-1a.allocation_id
+output "elastic-ip-allocation-id-exch-gr-nlb-us-east-1a" {
+	value = aws_eip.exch-gr-nlb-us-east-1a.allocation_id
 }
 
-output "elastic-ip-allocation-id-exch-gr-us-east-1b" {
-	value = aws_eip.exch-gr-us-east-1b.allocation_id
+output "elastic-ip-allocation-id-exch-gr-nlb-us-east-1b" {
+	value = aws_eip.exch-gr-nlb-us-east-1b.allocation_id
 }

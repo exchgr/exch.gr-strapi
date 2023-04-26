@@ -19,8 +19,8 @@ jobs:
       run:
         working-directory: terraform
     outputs:
-      elastic-ip-allocation-id-exch-gr-us-east-1a: ${{ steps.terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1a.outputs.output }}
-      elastic-ip-allocation-id-exch-gr-us-east-1b: ${{ steps.terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1b.outputs.output }}
+      elastic-ip-allocation-id-exch-gr-nlb-us-east-1a: ${{ steps.terraform-output-elastic-ip-allocation-id-exch-gr-nlb-us-east-1a.outputs.output }}
+      elastic-ip-allocation-id-exch-gr-nlb-us-east-1b: ${{ steps.terraform-output-elastic-ip-allocation-id-exch-gr-nlb-us-east-1b.outputs.output }}
     steps:
       - name: "checkout"
         uses: actions/checkout@v3
@@ -53,11 +53,11 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: terraform apply -auto-approve
       - name: "terraform output 1a"
-        id: terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1a
-        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-exch-gr-us-east-1a)" >> $GITHUB_OUTPUT
+        id: terraform-output-elastic-ip-allocation-id-exch-gr-nlb-us-east-1a
+        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-exch-gr-nlb-us-east-1a)" >> $GITHUB_OUTPUT
       - name: "terraform output 1b"
-        id: terraform-output-elastic-ip-allocation-id-exch-gr-us-east-1b
-        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-exch-gr-us-east-1b)" >> $GITHUB_OUTPUT
+        id: terraform-output-elastic-ip-allocation-id-exch-gr-nlb-us-east-1b
+        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-exch-gr-nlb-us-east-1b)" >> $GITHUB_OUTPUT
   build-and-push-image:
     needs: deploy-infra
     runs-on: ubuntu-latest
@@ -116,8 +116,8 @@ jobs:
       DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       DATABASE_SSL: ${{ vars.DATABASE_SSL }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1A: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-us-east-1a }}
-      ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1B: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-us-east-1b }}
+      ELASTIC_IP_ALLOCATION_ID_EXCH_GR_NLB_US_EAST_1A: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-nlb-us-east-1a }}
+      ELASTIC_IP_ALLOCATION_ID_EXCH_GR_NLB_US_EAST_1B: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-nlb-us-east-1b }}
     steps:
       - name: "checkout"
         uses: actions/checkout@v3
