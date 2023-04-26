@@ -21,12 +21,12 @@ spec:
             limits:
               memory: 1Gi
           ports:
-            - containerPort: $PORT
+            - containerPort: $CONTAINER_PORT
           env:
             - name: HOST
               value: "${HOST}"
-            - name: PORT
-              value: "${PORT}"
+            - name: CONTAINER_PORT
+              value: "${CONTAINER_PORT}"
             - name: APP_KEYS
               value: "${APP_KEYS}"
             - name: API_TOKEN_SALT

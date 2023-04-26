@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HOST: ${{ vars.HOST }}
-      PORT: ${{ vars.PORT }}
+      CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
       APP_KEYS: ${{ secrets.APP_KEYS }}
       API_TOKEN_SALT: ${{ secrets.API_TOKEN_SALT }}
       ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
