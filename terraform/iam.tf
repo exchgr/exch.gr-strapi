@@ -53,6 +53,9 @@ data "aws_caller_identity" "current" {}
 locals {
 	account_id = data.aws_caller_identity.current.account_id
 	oidc_provider = trimprefix (aws_eks_cluster.exch-gr.identity.0.oidc.0.issuer, "https://")
+	oidc_provider_arn = "arn:aws:iam::${local.account_id}:oidc-provider/${local.oidc_provider}"
+	aws_load_balancer_controller_service_account = "aws-load-balancer-controller"
+	aws_load_balancer_controller_namespace = "kube-system"
 }
 
 resource "aws_iam_policy" "aws-load-balancer-controller" {
@@ -62,16 +65,15 @@ resource "aws_iam_policy" "aws-load-balancer-controller" {
 
 resource "aws_iam_role" "aws-load-balancer-controller" {
 	name = "aws-load-balancer-controller"
-	assume_role_policy = jsonencode({
-		Version = "2012-10-17"
-		Statement = [{
-			Action = "sts:AssumeRoleWithWebIdentity"
-			Effect = "Allow"
-			Principal = {
-				Federated = "arn:aws:iam::${local.account_id}:oidc-provider/${local.oidc_provider}"
-			}
-		}]
-	})
+	assume_role_policy = templatefile(
+		"aws-load-balancer-controller-assume-role-policy.json.tftpl",
+		{
+			oidc_provider_arn = local.oidc_provider_arn
+			oidc_provider = local.oidc_provider
+			aws_load_balancer_controller_service_account = local.aws_load_balancer_controller_service_account
+			aws_load_balancer_controller_namespace = local.aws_load_balancer_controller_namespace
+		}
+	)
 }
 
 resource "aws_iam_role_policy_attachment" "aws-load-balancer-controller" {
@@ -81,10 +83,10 @@ resource "aws_iam_role_policy_attachment" "aws-load-balancer-controller" {
 
 resource "kubernetes_service_account" "aws-load-balancer-controller" {
 	metadata {
-		name = "aws-load-balancer-controller"
+		name = local.aws_load_balancer_controller_service_account
 		annotations = {
 			"eks.amazonaws.com/role-arn" = aws_iam_role.aws-load-balancer-controller.arn
 		}
-		namespace = "kube-system"
+		namespace = local.aws_load_balancer_controller_namespace
 	}
 }

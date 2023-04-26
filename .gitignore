@@ -132,4 +132,3 @@ _site/
 ############################
 
 .terraform/
-.terraform.lock.hcl
