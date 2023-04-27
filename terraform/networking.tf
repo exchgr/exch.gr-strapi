@@ -87,7 +87,7 @@ resource "aws_eip" "exch-gr-nlb-us-east-1a" {
 	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
 	tags = {
-		Name = "exch-gr-us-east-1a"
+		Name = "exch-gr-nlb-us-east-1a"
 	}
 }
 
@@ -96,7 +96,7 @@ resource "aws_eip" "exch-gr-nlb-us-east-1b" {
 	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
 
 	tags = {
-		Name = "exch-gr-us-east-1b"
+		Name = "exch-gr-nlb-us-east-1b"
 	}
 }
 

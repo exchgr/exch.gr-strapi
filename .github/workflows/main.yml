@@ -137,4 +137,3 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
       - name: "apply kubernetes manifests"
         run: "kubernetes/apply.sh"
-      - run: echo 1 $ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1A 2 $ELASTIC_IP_ALLOCATION_ID_EXCH_GR_US_EAST_1B 3 ${{ needs.deploy-infra.outputs }} 4 ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-us-east-1a }} 5 ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-us-east-1a.output }}
