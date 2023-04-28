@@ -9,10 +9,18 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
     service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "$ELASTIC_IP_ALLOCATION_ID_EXCH_GR_NLB_US_EAST_1A,$ELASTIC_IP_ALLOCATION_ID_EXCH_GR_NLB_US_EAST_1B"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:$AWS_REGION:$AWS_ACCOUNT_ID:certificate/$AWS_ACM_EXCH_GR"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
 spec:
   type: LoadBalancer
   ports:
-    - port: $POD_PORT
+    - name: http
+      port: 80
+      targetPort: $CONTAINER_PORT
+      protocol: TCP
+    - name: https
+      port: 443
       targetPort: $CONTAINER_PORT
       protocol: TCP
   selector:

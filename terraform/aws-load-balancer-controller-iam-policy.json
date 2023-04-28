@@ -48,6 +48,7 @@
                 "cognito-idp:DescribeUserPoolClient",
                 "acm:ListCertificates",
                 "acm:DescribeCertificate",
+								"acm:GetCertificate",
                 "iam:ListServerCertificates",
                 "iam:GetServerCertificate",
                 "waf-regional:GetWebACL",
