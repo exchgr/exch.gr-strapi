@@ -16,10 +16,6 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - name: http
-      port: 80
-      targetPort: $CONTAINER_PORT
-      protocol: TCP
     - name: https
       port: 443
       targetPort: $CONTAINER_PORT
