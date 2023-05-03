@@ -7,3 +7,4 @@ for template in *.yml; do
 done
 
 kubectl apply -f out/
+kubectl rollout status deploy/exch-gr-strapi
