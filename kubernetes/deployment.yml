@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: $APP_NAME
-          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$APP_NAME
+          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$APP_NAME:$COMMIT_HASH
+          imagePullPolicy: Always
           resources:
             requests:
               memory: 512Mi
