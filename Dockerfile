@@ -12,7 +12,7 @@ ARG TARGETARCH
 ENV npm_config_arch=$TARGETARCH
 ENV NODE_ENV=production
 
-COPY yarn.lock package.json package-lock.json .yarnrc.yml tsconfig.json ./
+COPY yarn.lock package.json .yarnrc.yml tsconfig.json ./
 COPY .yarn .yarn
 
 RUN yarn set version berry
