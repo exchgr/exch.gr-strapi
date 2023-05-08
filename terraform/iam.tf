@@ -1,5 +1,5 @@
-resource "aws_iam_role" "exch-gr-eks-cluster-role" {
-	name = "exch-gr-eks-cluster-role"
+resource "aws_iam_role" "eks_cluster_role" {
+	name = "${data.external.env.result["SHORT_APP_NAME"]}-eks-cluster-role"
 	assume_role_policy = jsonencode({
 		Version = "2012-10-17"
 		Statement = [{
@@ -14,11 +14,11 @@ resource "aws_iam_role" "exch-gr-eks-cluster-role" {
 
 resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
 	policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-	role       = aws_iam_role.exch-gr-eks-cluster-role.name
+	role       = aws_iam_role.eks_cluster_role.name
 }
 
-resource "aws_iam_role" "exch-gr-eks-node-group-role" {
-	name = "exch-gr-eks-node-group-role"
+resource "aws_iam_role" "eks_node_group_role" {
+	name = "${data.external.env.result["SHORT_APP_NAME"]}-eks-node-group-role"
 	assume_role_policy = jsonencode({
 		Version = "2012-10-17"
 		Statement = [{
@@ -33,17 +33,17 @@ resource "aws_iam_role" "exch-gr-eks-node-group-role" {
 
 resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
 	policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-	role       = aws_iam_role.exch-gr-eks-node-group-role.name
+	role       = aws_iam_role.eks_node_group_role.name
 }
 
 resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
 	policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-	role       = aws_iam_role.exch-gr-eks-node-group-role.name
+	role       = aws_iam_role.eks_node_group_role.name
 }
 
 resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
 	policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-	role       = aws_iam_role.exch-gr-eks-node-group-role.name
+	role       = aws_iam_role.eks_node_group_role.name
 }
 
 # AWS Load Balancer Controller
@@ -52,7 +52,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
 	account_id = data.aws_caller_identity.current.account_id
-	oidc_provider = trimprefix (aws_eks_cluster.exch-gr.identity.0.oidc.0.issuer, "https://")
+	oidc_provider = trimprefix (aws_eks_cluster.aws_eks_cluster.identity.0.oidc.0.issuer, "https://")
 	oidc_provider_arn = "arn:aws:iam::${local.account_id}:oidc-provider/${local.oidc_provider}"
 	aws_load_balancer_controller_service_account = "aws-load-balancer-controller"
 	aws_load_balancer_controller_namespace = "kube-system"

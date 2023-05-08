@@ -1,9 +1,7 @@
-resource "aws_acm_certificate" "exch-gr" {
-	domain_name = "exch.gr"
+resource "aws_acm_certificate" "aws_acm_certificate" {
+	domain_name = data.external.env.result["DOMAIN_NAME"]
 
-	subject_alternative_names = [
-		"*.exch.gr"
-	]
+	subject_alternative_names = split(",", data.external.env.result["SUBJECT_ALTERNATIVE_NAMES"])
 
 	validation_method = "DNS"
 
@@ -15,6 +13,6 @@ resource "aws_acm_certificate" "exch-gr" {
 	key_algorithm = "RSA_2048"
 }
 
-output "aws-acm-exch-gr" {
-	value = aws_acm_certificate.exch-gr.arn
+output "aws-acm-certificate" {
+	value = aws_acm_certificate.aws_acm_certificate.arn
 }

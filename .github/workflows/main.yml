@@ -12,6 +12,10 @@ env:
   APP_NAME: ${{ vars.APP_NAME }}
   ECR_IMAGE_TAG: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.APP_NAME }}
   GHCR_IMAGE_TAG: ${{ vars.GHCR_REGISTRY }}/${{ vars.APP_NAME }}
+  DATABASE_NAME: ${{ vars.DATABASE_NAME }}
+  DATABASE_USERNAME: ${{ vars.DATABASE_USERNAME }}
+  DATABASE_PORT: ${{ vars.DATABASE_PORT }}
+  CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
 jobs:
   deploy-infra:
     runs-on: ubuntu-latest
@@ -19,9 +23,14 @@ jobs:
       run:
         working-directory: terraform
     outputs:
-      elastic-ip-allocation-id-exch-gr-nlb-us-east-1a: ${{ steps.terraform-output-elastic-ip-allocation-id-exch-gr-nlb-us-east-1a.outputs.output }}
-      elastic-ip-allocation-id-exch-gr-nlb-us-east-1b: ${{ steps.terraform-output-elastic-ip-allocation-id-exch-gr-nlb-us-east-1b.outputs.output }}
-      aws-acm-exch-gr: ${{ steps.terraform-output-aws-acm-exch-gr.outputs.output }}
+      elastic-ip-allocation-id-nlb-0: ${{ steps.terraform-output-elastic-ip-allocation-id-nlb-0.outputs.output }}
+      elastic-ip-allocation-id-nlb-1: ${{ steps.terraform-output-elastic-ip-allocation-id-nlb-1.outputs.output }}
+      aws-acm-certificate: ${{ steps.terraform-output-aws-acm-certificate.outputs.output }}
+    env:
+      SHORT_APP_NAME: ${{ vars.SHORT_APP_NAME }}
+      DATABASE_FINAL_SNAPSHOT_IDENTIFIER: ${{ vars.DATABASE_FINAL_SNAPSHOT_IDENTIFIER }}
+      DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+      SUBJECT_ALTERNATIVE_NAMES: ${{ vars.SUBJECT_ALTERNATIVE_NAMES }}
     steps:
       - name: "checkout"
         uses: actions/checkout@v3
@@ -49,19 +58,19 @@ jobs:
             terraform/.terraform.lock.hcl
       - name: "terraform init"
         if: steps.cache.outputs.cache-hit != 'true'
-        run: terraform init
+        run: terraform init -backend-config="bucket=$APP_NAME-terraform" -backend-config="key=terraform-state" -backend-config="region=$AWS_REGION"
       - name: "terraform apply"
         if: steps.cache.outputs.cache-hit != 'true'
         run: terraform apply -auto-approve
       - name: "terraform output 1a"
-        id: terraform-output-elastic-ip-allocation-id-exch-gr-nlb-us-east-1a
-        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-exch-gr-nlb-us-east-1a)" >> $GITHUB_OUTPUT
+        id: terraform-output-elastic-ip-allocation-id-nlb-0
+        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-nlb-0)" >> $GITHUB_OUTPUT
       - name: "terraform output 1b"
-        id: terraform-output-elastic-ip-allocation-id-exch-gr-nlb-us-east-1b
-        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-exch-gr-nlb-us-east-1b)" >> $GITHUB_OUTPUT
+        id: terraform-output-elastic-ip-allocation-id-nlb-1
+        run: echo "output=$(terraform output -raw elastic-ip-allocation-id-nlb-1)" >> $GITHUB_OUTPUT
       - name: "terraform output certificate arn"
-        id: terraform-output-aws-acm-exch-gr
-        run: echo "output=$(terraform output -raw aws-acm-exch-gr | cut -d "/" -f2)" >> $GITHUB_OUTPUT
+        id: terraform-output-aws-acm-certificate
+        run: echo "output=$(terraform output -raw aws-acm-certificate | cut -d "/" -f2)" >> $GITHUB_OUTPUT
   build-and-push-image:
     needs: deploy-infra
     runs-on: ubuntu-latest
@@ -107,21 +116,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HOST: ${{ vars.HOST }}
-      CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
       APP_KEYS: ${{ secrets.APP_KEYS }}
       API_TOKEN_SALT: ${{ secrets.API_TOKEN_SALT }}
       ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
       DATABASE_CLIENT: ${{ vars.DATABASE_CLIENT }}
       DATABASE_HOST: ${{ vars.DATABASE_HOST }}
-      DATABASE_PORT: ${{ vars.DATABASE_PORT }}
-      DATABASE_NAME: ${{ vars.DATABASE_NAME }}
-      DATABASE_USERNAME: ${{ vars.DATABASE_USERNAME }}
       DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       DATABASE_SSL: ${{ vars.DATABASE_SSL }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      ELASTIC_IP_ALLOCATION_ID_EXCH_GR_NLB_US_EAST_1A: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-nlb-us-east-1a }}
-      ELASTIC_IP_ALLOCATION_ID_EXCH_GR_NLB_US_EAST_1B: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-exch-gr-nlb-us-east-1b }}
-      AWS_ACM_EXCH_GR: ${{ needs.deploy-infra.outputs.aws-acm-exch-gr }}
+      ELASTIC_IP_ALLOCATION_ID_NLB_0: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-nlb-0 }}
+      ELASTIC_IP_ALLOCATION_ID_NLB_1: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-id-nlb-1 }}
+      AWS_ACM_CERTIFICATE: ${{ needs.deploy-infra.outputs.aws-acm-certificate }}
       COMMIT_HASH: ${{ github.sha }}
     steps:
       - name: "checkout"

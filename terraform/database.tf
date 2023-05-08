@@ -1,43 +1,43 @@
-resource "random_password" "exch-gr" {
+resource "random_password" "random_password" {
 	length = 64
 	special = false
 }
 
-resource "aws_db_subnet_group" "exch-gr" {
-	name = "exch-gr"
+resource "aws_db_subnet_group" "aws_db_subnet_group" {
+	name = data.external.env.result["SHORT_APP_NAME"]
 
 	subnet_ids = [
-		aws_subnet.exch-gr-private-us-east-1a.id,
-		aws_subnet.exch-gr-private-us-east-1b.id,
+		aws_subnet.aws_subnet_private[0].id,
+		aws_subnet.aws_subnet_private[1].id,
 	]
 }
 
-resource "aws_rds_cluster" "exch-gr" {
-	cluster_identifier = "exch-gr"
+resource "aws_rds_cluster" "aws_rds_cluster" {
+	cluster_identifier = data.external.env.result["SHORT_APP_NAME"]
 	engine = "aurora-postgresql"
 	storage_encrypted = true
 	apply_immediately = true
 
 	# credentials
-	database_name = "exchgr"
-	master_username = "root"
-	master_password = random_password.exch-gr.result
+	database_name = data.external.env.result["DATABASE_NAME"]
+	master_username = data.external.env.result["DATABASE_USERNAME"]
+	master_password = random_password.random_password.result
 
 	# logs
 	enabled_cloudwatch_logs_exports = ["postgresql"]
 
 	# networking
-	db_subnet_group_name = aws_db_subnet_group.exch-gr.name
-	vpc_security_group_ids = [aws_security_group.exch-gr.id]
+	db_subnet_group_name = aws_db_subnet_group.aws_db_subnet_group.name
+	vpc_security_group_ids = [aws_security_group.aws_security_group.id]
 
-	final_snapshot_identifier = "exch-gr-final-snapshot"
+	final_snapshot_identifier = data.external.env.result["DATABASE_FINAL_SNAPSHOT_IDENTIFIER"]
 }
 
-resource "aws_rds_cluster_instance" "exch-gr" {
+resource "aws_rds_cluster_instance" "aws_rds_cluster_instance" {
 	count = 2
-	identifier = "exch-gr-${count.index}"
-	cluster_identifier = aws_rds_cluster.exch-gr.id
+	identifier = "${data.external.env.result["SHORT_APP_NAME"]}-${count.index}"
+	cluster_identifier = aws_rds_cluster.aws_rds_cluster.id
 	instance_class = "db.t4g.medium"
-	engine = aws_rds_cluster.exch-gr.engine
-	engine_version = aws_rds_cluster.exch-gr.engine_version
+	engine = aws_rds_cluster.aws_rds_cluster.engine
+	engine_version = aws_rds_cluster.aws_rds_cluster.engine_version
 }

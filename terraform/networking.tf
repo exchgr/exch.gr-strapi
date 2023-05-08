@@ -1,59 +1,38 @@
-resource "aws_vpc" "exch-gr" {
+resource "aws_vpc" "aws_vpc" {
 	cidr_block = "10.0.0.0/16"
 
 	tags = {
-		Name = "exch-gr"
+		Name = data.external.env.result["SHORT_APP_NAME"]
 	}
 }
 
-resource "aws_subnet" "exch-gr-public-us-east-1a" {
-	vpc_id = aws_vpc.exch-gr.id
-	cidr_block = "10.0.1.0/24"
-	availability_zone = "us-east-1a"
+resource "aws_subnet" "aws_subnet_public" {
+	count = 2
+	vpc_id = aws_vpc.aws_vpc.id
+	cidr_block = "10.0.${count.index + 1}.0/24"
+	availability_zone = "${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
 	map_public_ip_on_launch = true
 
 	tags = {
-		Name = "exch-gr-public-us-east-1a"
+		Name = "${data.external.env.result["SHORT_APP_NAME"]}-public-${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
 		"kubernetes.io/role/elb" = 1
 	}
 }
 
-resource "aws_subnet" "exch-gr-public-us-east-1b" {
-	vpc_id = aws_vpc.exch-gr.id
-	cidr_block = "10.0.2.0/24"
-	availability_zone = "us-east-1b"
-	map_public_ip_on_launch = true
-
-	tags = {
-		Name = "exch-gr-public-us-east-1b"
-		"kubernetes.io/role/elb" = 1
-	}
-}
-
-resource "aws_subnet" "exch-gr-private-us-east-1a" {
-	vpc_id = aws_vpc.exch-gr.id
-	cidr_block = "10.0.3.0/24"
-	availability_zone = "us-east-1a"
+resource "aws_subnet" "aws_subnet_private" {
+	count = 2
+	vpc_id = aws_vpc.aws_vpc.id
+	cidr_block = "10.0.${count.index + 3}.0/24"
+	availability_zone = "${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
 	map_public_ip_on_launch = false
 
 	tags = {
-		Name = "exch-gr-private-us-east-1a"
+		Name = "${data.external.env.result["SHORT_APP_NAME"]}-private-${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
 	}
 }
 
-resource "aws_subnet" "exch-gr-private-us-east-1b" {
-	vpc_id = aws_vpc.exch-gr.id
-	cidr_block = "10.0.4.0/24"
-	availability_zone = "us-east-1b"
-	map_public_ip_on_launch = false
-
-	tags = {
-		Name = "exch-gr-private-us-east-1b"
-	}
-}
-
-resource "aws_internet_gateway" "exch-gr-internet-gateway" {
-	vpc_id = aws_vpc.exch-gr.id
+resource "aws_internet_gateway" "aws_internet_gateway" {
+	vpc_id = aws_vpc.aws_vpc.id
 
 	tags = {
 		Name = "exch-gr-internet-gateway"
@@ -62,143 +41,97 @@ resource "aws_internet_gateway" "exch-gr-internet-gateway" {
 
 # Elastic IPs for use in the NAT gateway to provide internet access
 
-resource "aws_eip" "exch-gr-us-east-1a" {
+resource "aws_eip" "aws_eip_nat" {
+	count = 2
 	vpc = true
-	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
+	depends_on = [aws_internet_gateway.aws_internet_gateway]
 
 	tags = {
-		Name = "exch-gr-us-east-1a"
-	}
-}
-
-resource "aws_eip" "exch-gr-us-east-1b" {
-	vpc = true
-	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
-
-	tags = {
-		Name = "exch-gr-us-east-1b"
+		Name = "${data.external.env.result["SHORT_APP_NAME"]}-${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
 	}
 }
 
 # Elastic IPs for use in the NLB
 
-resource "aws_eip" "exch-gr-nlb-us-east-1a" {
+resource "aws_eip" "aws_eip_nlb" {
+	count = 2
 	vpc = true
-	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
+	depends_on = [aws_internet_gateway.aws_internet_gateway]
 
 	tags = {
-		Name = "exch-gr-nlb-us-east-1a"
+		Name = "${data.external.env.result["SHORT_APP_NAME"]}-nlb-${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
 	}
 }
 
-resource "aws_eip" "exch-gr-nlb-us-east-1b" {
-	vpc = true
-	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
-
-	tags = {
-		Name = "exch-gr-nlb-us-east-1b"
-	}
-}
-
-resource "aws_nat_gateway" "exch-gr-nat-gateway-us-east-1a" {
-	subnet_id = aws_subnet.exch-gr-public-us-east-1a.id
+resource "aws_nat_gateway" "aws_nat_gateway" {
+	count = 2
+	subnet_id = aws_subnet.aws_subnet_public[count.index].id
 	connectivity_type = "public"
-	allocation_id = aws_eip.exch-gr-us-east-1a.id
-	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
+	allocation_id = aws_eip.aws_eip_nat[count.index].id
+	depends_on = [aws_internet_gateway.aws_internet_gateway]
 
 	tags = {
-		Name = "exch-gr-nat-gateway-us-east-1a"
+		Name = "${data.external.env.result["SHORT_APP_NAME"]}-nat-gateway-${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
 	}
 }
 
-resource "aws_nat_gateway" "exch-gr-nat-gateway-us-east-1b" {
-	subnet_id = aws_subnet.exch-gr-public-us-east-1b.id
-	connectivity_type = "public"
-	allocation_id = aws_eip.exch-gr-us-east-1b.id
-	depends_on = [aws_internet_gateway.exch-gr-internet-gateway]
+resource "aws_route_table" "aws_route_table_public" {
+	vpc_id = aws_vpc.aws_vpc.id
 
 	tags = {
-		Name = "exch-gr-nat-gateway-us-east-1b"
+		Name = "${data.external.env.result["SHORT_APP_NAME"]}-public"
 	}
 }
 
-resource "aws_route_table" "exch-gr-public" {
-	vpc_id = aws_vpc.exch-gr.id
-
-	tags = {
-		Name = "exch-gr-public"
-	}
-}
-
-resource "aws_route" "exch-gr-public" {
+resource "aws_route" "aws_route_public" {
 	destination_cidr_block = "0.0.0.0/0"
-	route_table_id = aws_route_table.exch-gr-public.id
-	gateway_id = aws_internet_gateway.exch-gr-internet-gateway.id
+	route_table_id = aws_route_table.aws_route_table_public.id
+	gateway_id = aws_internet_gateway.aws_internet_gateway.id
 }
 
-resource "aws_route_table_association" "exch-gr-public-us-east-1a" {
-	route_table_id = aws_route_table.exch-gr-public.id
-	subnet_id = aws_subnet.exch-gr-public-us-east-1a.id
+resource "aws_route_table_association" "aws_route_table_association_public" {
+	count = 2
+	route_table_id = aws_route_table.aws_route_table_public.id
+	subnet_id = aws_subnet.aws_subnet_public[count.index].id
 }
 
-resource "aws_route_table_association" "exch-gr-public-us-east-1b" {
-	route_table_id = aws_route_table.exch-gr-public.id
-	subnet_id = aws_subnet.exch-gr-public-us-east-1b.id
-}
-
-resource "aws_route_table" "exch-gr-private-us-east-1a" {
-	vpc_id = aws_vpc.exch-gr.id
+resource "aws_route_table" "aws_route_table_private" {
+	count = 2
+	vpc_id = aws_vpc.aws_vpc.id
 
 	tags = {
-		Name = "exch-gr-private-us-east-1a"
+		Name = "${data.external.env.result["SHORT_APP_NAME"]}-private-${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
 	}
 }
 
-resource "aws_route_table" "exch-gr-private-us-east-1b" {
-	vpc_id = aws_vpc.exch-gr.id
-
-	tags = {
-		Name = "exch-gr-private-us-east-1b"
-	}
-}
-
-resource "aws_route" "exch-gr-private-us-east-1a" {
+resource "aws_route" "aws_route_private" {
+	count = 2
 	destination_cidr_block = "0.0.0.0/0"
-	route_table_id = aws_route_table.exch-gr-private-us-east-1a.id
-	nat_gateway_id = aws_nat_gateway.exch-gr-nat-gateway-us-east-1a.id
+	route_table_id = aws_route_table.aws_route_table_private[count.index].id
+	nat_gateway_id = aws_nat_gateway.aws_nat_gateway[count.index].id
 }
 
-resource "aws_route" "exch-gr-private-us-east-1b" {
-	destination_cidr_block = "0.0.0.0/0"
-	route_table_id = aws_route_table.exch-gr-private-us-east-1b.id
-	nat_gateway_id = aws_nat_gateway.exch-gr-nat-gateway-us-east-1b.id
+resource "aws_route_table_association" "aws_route_table_association_private" {
+	count = 2
+	route_table_id = aws_route_table.aws_route_table_private[count.index].id
+	subnet_id = aws_subnet.aws_subnet_private[count.index].id
 }
 
-resource "aws_route_table_association" "exch-gr-private-us-east-1a" {
-	route_table_id = aws_route_table.exch-gr-private-us-east-1a.id
-	subnet_id = aws_subnet.exch-gr-private-us-east-1a.id
-}
-
-resource "aws_route_table_association" "exch-gr-private-us-east-1b" {
-	route_table_id = aws_route_table.exch-gr-private-us-east-1b.id
-	subnet_id = aws_subnet.exch-gr-private-us-east-1b.id
-}
-
-resource "aws_security_group" "exch-gr" {
-	name = "exch-gr"
-	vpc_id = aws_vpc.exch-gr.id
+resource "aws_security_group" "aws_security_group" {
+	name = data.external.env.result["SHORT_APP_NAME"]
+	vpc_id = aws_vpc.aws_vpc.id
 
 	ingress {
 		protocol  = "tcp"
 		from_port = 443
-		to_port   = 1337
+		to_port   = data.external.env.result["CONTAINER_PORT"]
 		cidr_blocks = ["0.0.0.0/0"]
 	}
 
 	ingress {
 		protocol  = "udp"
 		from_port = 443
-		to_port   = 1337
+		to_port   = data.external.env.result["CONTAINER_PORT"]
 		cidr_blocks = ["0.0.0.0/0"]
 	}
 
@@ -206,29 +139,29 @@ resource "aws_security_group" "exch-gr" {
 
 	ingress {
 		protocol    = "tcp"
-		from_port   = 5432
-		to_port     = 5432
+		from_port   = data.external.env.result["DATABASE_PORT"]
+		to_port     = data.external.env.result["DATABASE_PORT"]
 		cidr_blocks = [
-			aws_subnet.exch-gr-private-us-east-1a.cidr_block,
-			aws_subnet.exch-gr-private-us-east-1b.cidr_block,
+			aws_subnet.aws_subnet_private[0].cidr_block,
+			aws_subnet.aws_subnet_private[1].cidr_block,
 		]
 	}
 
 	egress {
 		protocol  = "tcp"
-		from_port = 5432
-		to_port   = 5432
+		from_port = data.external.env.result["DATABASE_PORT"]
+		to_port   = data.external.env.result["DATABASE_PORT"]
 		cidr_blocks = [
-			aws_subnet.exch-gr-private-us-east-1a.cidr_block,
-			aws_subnet.exch-gr-private-us-east-1b.cidr_block,
+			aws_subnet.aws_subnet_private[0].cidr_block,
+			aws_subnet.aws_subnet_private[1].cidr_block,
 		]
 	}
 }
 
-output "elastic-ip-allocation-id-exch-gr-nlb-us-east-1a" {
-	value = aws_eip.exch-gr-nlb-us-east-1a.allocation_id
+output "elastic-ip-allocation-id-nlb-0" {
+	value = aws_eip.aws_eip_nlb[0].allocation_id
 }
 
-output "elastic-ip-allocation-id-exch-gr-nlb-us-east-1b" {
-	value = aws_eip.exch-gr-nlb-us-east-1b.allocation_id
+output "elastic-ip-allocation-id-nlb-1" {
+	value = aws_eip.aws_eip_nlb[1].allocation_id
 }

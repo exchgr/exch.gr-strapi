@@ -1,9 +1,5 @@
 terraform {
-	backend "s3" {
-		bucket = "exch-gr-strapi-terraform"
-		key = "terraform-state"
-		region = "us-east-1"
-	}
+	backend "s3" {}
 
 	required_providers {
 		aws = {
@@ -19,7 +15,7 @@ terraform {
 }
 
 provider "aws" {
-	region = "us-east-1"
+	region = data.external.env.result["AWS_REGION"]
 }
 
 provider "kubernetes" {
