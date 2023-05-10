@@ -158,10 +158,6 @@ resource "aws_security_group" "aws_security_group" {
 	}
 }
 
-output "elastic-ip-allocation-id-nlb-0" {
-	value = aws_eip.aws_eip_nlb[0].allocation_id
-}
-
-output "elastic-ip-allocation-id-nlb-1" {
-	value = aws_eip.aws_eip_nlb[1].allocation_id
+output "elastic-ip-allocation-ids-nlb" {
+	value = join(",", aws_eip.aws_eip_nlb.*.allocation_id)
 }
