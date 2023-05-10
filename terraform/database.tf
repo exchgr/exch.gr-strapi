@@ -34,7 +34,7 @@ resource "aws_rds_cluster" "aws_rds_cluster" {
 }
 
 resource "aws_rds_cluster_instance" "aws_rds_cluster_instance" {
-	count = 2
+	count = 1
 	identifier = "${data.external.env.result["SHORT_APP_NAME"]}-${count.index}"
 	cluster_identifier = aws_rds_cluster.aws_rds_cluster.id
 	instance_class = "db.t4g.medium"
