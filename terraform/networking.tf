@@ -7,7 +7,7 @@ resource "aws_vpc" "aws_vpc" {
 }
 
 locals {
-	network_count = 2
+	network_count = 1
 }
 
 resource "aws_subnet" "aws_subnet_public" {
