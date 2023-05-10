@@ -3,12 +3,10 @@ resource "aws_eks_cluster" "aws_eks_cluster" {
 	role_arn = aws_iam_role.eks_cluster_role.arn
 
 	vpc_config {
-		subnet_ids = [
-			aws_subnet.aws_subnet_public[0].id,
-			aws_subnet.aws_subnet_public[1].id,
-			aws_subnet.aws_subnet_private[0].id,
-			aws_subnet.aws_subnet_private[1].id,
-		]
+		subnet_ids = concat(
+			aws_subnet.aws_subnet_public.*.id,
+			aws_subnet.aws_subnet_private.*.id,
+		)
 		security_group_ids = [aws_security_group.aws_security_group.id]
 	}
 }
@@ -19,10 +17,7 @@ resource "aws_eks_node_group" "aws_eks_node_group" {
 	node_role_arn = aws_iam_role.eks_node_group_role.arn
 	ami_type = "AL2_ARM_64"
 
-	subnet_ids = [
-		aws_subnet.aws_subnet_private[0].id,
-		aws_subnet.aws_subnet_private[1].id,
-	]
+	subnet_ids = aws_subnet.aws_subnet_private.*.id
 
 	scaling_config {
 		desired_size = 1

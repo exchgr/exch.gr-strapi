@@ -6,10 +6,7 @@ resource "random_password" "random_password" {
 resource "aws_db_subnet_group" "aws_db_subnet_group" {
 	name = data.external.env.result["SHORT_APP_NAME"]
 
-	subnet_ids = [
-		aws_subnet.aws_subnet_private[0].id,
-		aws_subnet.aws_subnet_private[1].id,
-	]
+	subnet_ids = aws_subnet.aws_subnet_private.*.id
 }
 
 resource "aws_rds_cluster" "aws_rds_cluster" {

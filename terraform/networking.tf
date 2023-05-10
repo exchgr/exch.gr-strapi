@@ -6,8 +6,12 @@ resource "aws_vpc" "aws_vpc" {
 	}
 }
 
+locals {
+	network_count = 2
+}
+
 resource "aws_subnet" "aws_subnet_public" {
-	count = 2
+	count = local.network_count
 	vpc_id = aws_vpc.aws_vpc.id
 	cidr_block = "10.0.${count.index + 1}.0/24"
 	availability_zone = "${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
@@ -20,7 +24,7 @@ resource "aws_subnet" "aws_subnet_public" {
 }
 
 resource "aws_subnet" "aws_subnet_private" {
-	count = 2
+	count = local.network_count
 	vpc_id = aws_vpc.aws_vpc.id
 	cidr_block = "10.0.${count.index + 3}.0/24"
 	availability_zone = "${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
@@ -42,7 +46,7 @@ resource "aws_internet_gateway" "aws_internet_gateway" {
 # Elastic IPs for use in the NAT gateway to provide internet access
 
 resource "aws_eip" "aws_eip_nat" {
-	count = 2
+	count = local.network_count
 	vpc = true
 	depends_on = [aws_internet_gateway.aws_internet_gateway]
 
@@ -54,7 +58,7 @@ resource "aws_eip" "aws_eip_nat" {
 # Elastic IPs for use in the NLB
 
 resource "aws_eip" "aws_eip_nlb" {
-	count = 2
+	count = local.network_count
 	vpc = true
 	depends_on = [aws_internet_gateway.aws_internet_gateway]
 
@@ -64,7 +68,7 @@ resource "aws_eip" "aws_eip_nlb" {
 }
 
 resource "aws_nat_gateway" "aws_nat_gateway" {
-	count = 2
+	count = local.network_count
 	subnet_id = aws_subnet.aws_subnet_public[count.index].id
 	connectivity_type = "public"
 	allocation_id = aws_eip.aws_eip_nat[count.index].id
@@ -90,13 +94,13 @@ resource "aws_route" "aws_route_public" {
 }
 
 resource "aws_route_table_association" "aws_route_table_association_public" {
-	count = 2
+	count = local.network_count
 	route_table_id = aws_route_table.aws_route_table_public.id
 	subnet_id = aws_subnet.aws_subnet_public[count.index].id
 }
 
 resource "aws_route_table" "aws_route_table_private" {
-	count = 2
+	count = local.network_count
 	vpc_id = aws_vpc.aws_vpc.id
 
 	tags = {
@@ -105,14 +109,14 @@ resource "aws_route_table" "aws_route_table_private" {
 }
 
 resource "aws_route" "aws_route_private" {
-	count = 2
+	count = local.network_count
 	destination_cidr_block = "0.0.0.0/0"
 	route_table_id = aws_route_table.aws_route_table_private[count.index].id
 	nat_gateway_id = aws_nat_gateway.aws_nat_gateway[count.index].id
 }
 
 resource "aws_route_table_association" "aws_route_table_association_private" {
-	count = 2
+	count = local.network_count
 	route_table_id = aws_route_table.aws_route_table_private[count.index].id
 	subnet_id = aws_subnet.aws_subnet_private[count.index].id
 }
@@ -141,20 +145,14 @@ resource "aws_security_group" "aws_security_group" {
 		protocol    = "tcp"
 		from_port   = data.external.env.result["DATABASE_PORT"]
 		to_port     = data.external.env.result["DATABASE_PORT"]
-		cidr_blocks = [
-			aws_subnet.aws_subnet_private[0].cidr_block,
-			aws_subnet.aws_subnet_private[1].cidr_block,
-		]
+		cidr_blocks = aws_subnet.aws_subnet_private.*.cidr_block
 	}
 
 	egress {
 		protocol  = "tcp"
 		from_port = data.external.env.result["DATABASE_PORT"]
 		to_port   = data.external.env.result["DATABASE_PORT"]
-		cidr_blocks = [
-			aws_subnet.aws_subnet_private[0].cidr_block,
-			aws_subnet.aws_subnet_private[1].cidr_block,
-		]
+		cidr_blocks = aws_subnet.aws_subnet_private.*.cidr_block
 	}
 }
 
