@@ -24,7 +24,7 @@ resource "aws_subnet" "aws_subnet_public" {
 }
 
 resource "aws_subnet" "aws_subnet_private" {
-	count = local.network_count
+	count = max(local.network_count, 2)
 	vpc_id = aws_vpc.aws_vpc.id
 	cidr_block = "10.0.${count.index + 3}.0/24"
 	availability_zone = "${data.external.env.result["AWS_REGION"]}${jsondecode(format("\"\\u%04x\"", 97 + count.index))}"
@@ -116,8 +116,8 @@ resource "aws_route" "aws_route_private" {
 }
 
 resource "aws_route_table_association" "aws_route_table_association_private" {
-	count = local.network_count
-	route_table_id = aws_route_table.aws_route_table_private[count.index].id
+	count = max(local.network_count, 2)
+	route_table_id = aws_route_table.aws_route_table_private[min(count.index, local.network_count - 1)].id
 	subnet_id = aws_subnet.aws_subnet_private[count.index].id
 }
 
