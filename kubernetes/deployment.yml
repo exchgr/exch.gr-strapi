@@ -20,7 +20,7 @@ spec:
             requests:
               memory: 512Mi
             limits:
-              memory: 1Gi
+              memory: 768Mi
           ports:
             - containerPort: $CONTAINER_PORT
           env:
