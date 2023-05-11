@@ -10,6 +10,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   APP_NAME: ${{ vars.APP_NAME }}
+  SHORT_APP_NAME: ${{ vars.SHORT_APP_NAME }}
   ECR_IMAGE_TAG: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.APP_NAME }}
   GHCR_IMAGE_TAG: ${{ vars.GHCR_REGISTRY }}/${{ vars.APP_NAME }}
   DATABASE_NAME: ${{ vars.DATABASE_NAME }}
@@ -26,7 +27,6 @@ jobs:
       elastic-ip-allocation-ids-nlb: ${{ steps.terraform-output-elastic-ip-allocation-ids-nlb.outputs.output }}
       aws-acm-certificate: ${{ steps.terraform-output-aws-acm-certificate.outputs.output }}
     env:
-      SHORT_APP_NAME: ${{ vars.SHORT_APP_NAME }}
       DATABASE_FINAL_SNAPSHOT_IDENTIFIER: ${{ vars.DATABASE_FINAL_SNAPSHOT_IDENTIFIER }}
       DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
       SUBJECT_ALTERNATIVE_NAMES: ${{ vars.SUBJECT_ALTERNATIVE_NAMES }}
@@ -40,7 +40,7 @@ jobs:
       - name: "fetch kubeconfig"
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          aws eks --region $AWS_REGION update-kubeconfig --name $SHORT_APP_NAME
       - name: "authenticate with aws"
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -139,6 +139,6 @@ jobs:
       - name: "fetch kubeconfig"
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          aws eks --region $AWS_REGION update-kubeconfig --name $SHORT_APP_NAME
       - name: "apply kubernetes manifests"
         run: "kubernetes/apply.sh"
