@@ -90,3 +90,22 @@ resource "kubernetes_service_account" "aws-load-balancer-controller" {
 		namespace = local.aws_load_balancer_controller_namespace
 	}
 }
+
+resource "kubernetes_config_map" "aws_auth" {
+	metadata {
+		name      = "aws-auth"
+		namespace = "kube-system"
+	}
+
+	data = yamldecode(
+		templatefile(
+			"aws-auth-config-map.yml",
+			{
+				eks_node_group_role_name = aws_iam_role.eks_node_group_role.name
+				aws_account_id = data.external.env.result["AWS_ACCOUNT_ID"]
+			}
+		)
+	)
+
+	depends_on = [aws_eks_cluster.aws_eks_cluster]
+}
