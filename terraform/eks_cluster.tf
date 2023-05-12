@@ -25,7 +25,7 @@ resource "aws_eks_node_group" "aws_eks_node_group" {
 		min_size = 0
 	}
 
-	instance_types = ["t4g.micro"]
+	instance_types = ["t4g.small"]
 
 	depends_on = [
 		aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
