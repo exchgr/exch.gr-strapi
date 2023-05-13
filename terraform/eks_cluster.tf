@@ -33,3 +33,13 @@ resource "aws_eks_node_group" "aws_eks_node_group" {
 		aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy
 	]
 }
+
+resource "aws_eks_identity_provider_config" "aws_eks_identity_provider_config" {
+	cluster_name = aws_eks_cluster.aws_eks_cluster.name
+
+	oidc {
+		client_id                     = substr(aws_eks_cluster.aws_eks_cluster.identity.0.oidc.0.issuer, -32, -1)
+		identity_provider_config_name = "something"
+		issuer_url                    = aws_eks_cluster.aws_eks_cluster.identity.0.oidc.0.issuer
+	}
+}
