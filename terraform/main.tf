@@ -11,11 +11,19 @@ terraform {
 			source = "hashicorp/kubernetes"
 			version = "~> 2.19.0"
 		}
+
+		cloudflare = {
+			source = "cloudflare/cloudflare"
+			version = "~> 3.0"
+		}
 	}
 }
 
 provider "aws" {
 	region = data.external.env.result["AWS_REGION"]
+}
+
+provider "cloudflare" {
 }
 
 provider "kubernetes" {
