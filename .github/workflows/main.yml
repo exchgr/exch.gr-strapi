@@ -28,6 +28,7 @@ jobs:
     outputs:
       elastic-ip-allocation-ids-nlb: ${{ steps.terraform-output-elastic-ip-allocation-ids-nlb.outputs.output }}
       aws-acm-certificate: ${{ steps.terraform-output-aws-acm-certificate.outputs.output }}
+      aws-rds-cluster-endpoint: ${{ steps.terraform-output-aws-rds-cluster-endpoint.outputs.output }}
     env:
       DATABASE_FINAL_SNAPSHOT_IDENTIFIER: ${{ vars.DATABASE_FINAL_SNAPSHOT_IDENTIFIER }}
       DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
@@ -66,6 +67,9 @@ jobs:
       - name: "terraform output 1a"
         id: terraform-output-elastic-ip-allocation-ids-nlb
         run: echo "output=$(terraform output -raw elastic-ip-allocation-ids-nlb)" >> $GITHUB_OUTPUT
+      - name: "terraform output aws rds cluster endpoint"
+        id: terraform-output-aws-rds-cluster-endpoint
+        run: echo "output=$(terraform output -raw aws_rds_cluster_endpoint)" >> $GITHUB_OUTPUT
       - name: "terraform output certificate arn"
         id: terraform-output-aws-acm-certificate
         run: echo "output=$(terraform output -raw aws-acm-certificate | cut -d "/" -f2)" >> $GITHUB_OUTPUT
@@ -118,7 +122,7 @@ jobs:
       API_TOKEN_SALT: ${{ secrets.API_TOKEN_SALT }}
       ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
       DATABASE_CLIENT: ${{ vars.DATABASE_CLIENT }}
-      DATABASE_HOST: ${{ vars.DATABASE_HOST }}
+      DATABASE_HOST: ${{ needs.deploy-infra.outputs.aws-rds-cluster-endpoint }}
       DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       DATABASE_SSL: ${{ vars.DATABASE_SSL }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
