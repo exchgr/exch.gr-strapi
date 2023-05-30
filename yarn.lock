@@ -4999,6 +4999,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"axios@npm:^0.24.0":
+  version: 0.24.0
+  resolution: "axios@npm:0.24.0"
+  dependencies:
+    follow-redirects: ^1.14.4
+  checksum: 468cf496c08a6aadfb7e699bebdac02851e3043d4e7d282350804ea8900e30d368daa6e3cd4ab83b8ddb5a3b1e17a5a21ada13fc9cebd27b74828f47a4236316
+  languageName: node
+  linkType: hard
+
 "babel-loader@npm:^9.1.2":
   version: 9.1.2
   resolution: "babel-loader@npm:9.1.2"
@@ -7180,6 +7189,7 @@ __metadata:
     "@strapi/plugin-users-permissions": ^4.10.5
     "@strapi/strapi": ^4.10.5
     pg: 8.8.0
+    strapi-provider-upload-cloudflare: ^4.1.0
   languageName: unknown
   linkType: soft
 
@@ -7519,7 +7529,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.15.0":
+"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.14.4, follow-redirects@npm:^1.15.0":
   version: 1.15.2
   resolution: "follow-redirects@npm:1.15.2"
   peerDependenciesMeta:
@@ -13413,6 +13423,16 @@ __metadata:
   version: 3.3.2
   resolution: "std-env@npm:3.3.2"
   checksum: c02256bb041ba1870d23f8360bc7e47a9cf1fabcd02c8b7c4246d48f2c6bb47b4f45c70964348844e6d36521df84c4a9d09d468654b51e0eb5c600e3392b4570
+  languageName: node
+  linkType: hard
+
+"strapi-provider-upload-cloudflare@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "strapi-provider-upload-cloudflare@npm:4.1.0"
+  dependencies:
+    axios: ^0.24.0
+    form-data: ^4.0.0
+  checksum: e2189f2d99da70acd39a56c165b60bdfcf260cdd9f1c8cf96424da990a587baa426eeb95c65108d161ed2264806e22359814c716b8540d45ef2337c9529fb6ff
   languageName: node
   linkType: hard
 

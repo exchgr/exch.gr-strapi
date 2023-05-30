@@ -50,3 +50,7 @@ spec:
               value: "${DATABASE_SSL}"
             - name: JWT_SECRET
               value: "${JWT_SECRET}"
+            - name: CLOUDFLARE_ACCOUNT_ID
+              value: "${CLOUDFLARE_ACCOUNT_ID}"
+            - name: CLOUDFLARE_API_TOKEN
+              value: "${CLOUDFLARE_API_TOKEN}"

@@ -19,6 +19,7 @@ env:
   CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
 jobs:
   deploy-infra:
     runs-on: ubuntu-latest
