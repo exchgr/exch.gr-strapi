@@ -15,7 +15,7 @@
 		"@strapi/plugin-users-permissions": "^4.10.5",
 		"@strapi/strapi": "^4.10.5",
 		"pg": "8.8.0",
-		"strapi-provider-upload-cloudflare": "^4.1.0"
+		"strapi-provider-upload-cloudflare": "https://github.com/exchgr/strapi-provider-upload-cloudflare"
 	},
 	"author": {
 		"name": "Elle Mundy"

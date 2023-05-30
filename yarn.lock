@@ -4999,12 +4999,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "axios@npm:0.24.0"
+"axios@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "axios@npm:1.4.0"
   dependencies:
-    follow-redirects: ^1.14.4
-  checksum: 468cf496c08a6aadfb7e699bebdac02851e3043d4e7d282350804ea8900e30d368daa6e3cd4ab83b8ddb5a3b1e17a5a21ada13fc9cebd27b74828f47a4236316
+    follow-redirects: ^1.15.0
+    form-data: ^4.0.0
+    proxy-from-env: ^1.1.0
+  checksum: 7fb6a4313bae7f45e89d62c70a800913c303df653f19eafec88e56cea2e3821066b8409bc68be1930ecca80e861c52aa787659df0ffec6ad4d451c7816b9386b
   languageName: node
   linkType: hard
 
@@ -7189,7 +7191,7 @@ __metadata:
     "@strapi/plugin-users-permissions": ^4.10.5
     "@strapi/strapi": ^4.10.5
     pg: 8.8.0
-    strapi-provider-upload-cloudflare: ^4.1.0
+    strapi-provider-upload-cloudflare: "https://github.com/exchgr/strapi-provider-upload-cloudflare"
   languageName: unknown
   linkType: soft
 
@@ -7529,7 +7531,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.14.4, follow-redirects@npm:^1.15.0":
+"follow-redirects@npm:^1.0.0, follow-redirects@npm:^1.15.0":
   version: 1.15.2
   resolution: "follow-redirects@npm:1.15.2"
   peerDependenciesMeta:
@@ -13426,13 +13428,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"strapi-provider-upload-cloudflare@npm:^4.1.0":
-  version: 4.1.0
-  resolution: "strapi-provider-upload-cloudflare@npm:4.1.0"
+"strapi-provider-upload-cloudflare@https://github.com/exchgr/strapi-provider-upload-cloudflare":
+  version: 4.0.1
+  resolution: "strapi-provider-upload-cloudflare@https://github.com/exchgr/strapi-provider-upload-cloudflare.git#commit=eb9a3abde0f9b09c9c63661dbf68bd934fd5be90"
   dependencies:
-    axios: ^0.24.0
-    form-data: ^4.0.0
-  checksum: e2189f2d99da70acd39a56c165b60bdfcf260cdd9f1c8cf96424da990a587baa426eeb95c65108d161ed2264806e22359814c716b8540d45ef2337c9529fb6ff
+    axios: ^1.4.0
+  checksum: 1150878a6f4e97bb82bc098bf9a46e4114c9c2f0a276af548f55cf00b8b1cf63420be1cd10acb0b99863ac9850252d082b4ea585c6126181ee5468d22aefee05
   languageName: node
   linkType: hard
 
