@@ -88,6 +88,8 @@ jobs:
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
       - name: "log into ecr"
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: true
       - name: "log into ghcr"
         # repo and package must be linked (https://github.com/users/OWNER/packages/container/PACKAGE/settings)
         # repo must have write permissions on the package (https://github.com/users/OWNER/packages/container/PACKAGE/settings)
@@ -141,6 +143,8 @@ jobs:
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
       - name: "log into ecr"
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: true
       - name: "install kubectl"
         uses: azure/setup-kubectl@v3
       - name: "fetch kubeconfig"
