@@ -10,10 +10,10 @@
 		"strapi": "strapi"
 	},
 	"dependencies": {
-		"@strapi/plugin-graphql": "4.13.3",
-		"@strapi/plugin-i18n": "4.13.3",
-		"@strapi/plugin-users-permissions": "4.13.3",
-		"@strapi/strapi": "4.13.3",
+		"@strapi/plugin-graphql": "^4.13.7",
+		"@strapi/plugin-i18n": "^4.13.7",
+		"@strapi/plugin-users-permissions": "^4.13.7",
+		"@strapi/strapi": "^4.13.7",
 		"pg": "8.8.0",
 		"strapi-provider-upload-cloudflare": "^4.2.0"
 	},
