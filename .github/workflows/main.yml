@@ -36,9 +36,9 @@ jobs:
       SUBJECT_ALTERNATIVE_NAMES: ${{ vars.SUBJECT_ALTERNATIVE_NAMES }}
     steps:
       - name: "checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: "setup terraform"
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
       - name: "fetch kubeconfig"
@@ -46,14 +46,14 @@ jobs:
           mkdir -p ~/.kube
           aws eks --region $AWS_REGION update-kubeconfig --name $SHORT_APP_NAME
       - name: "authenticate with aws"
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
       - name: "cache terraform state"
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           key: ${{ hashFiles('terraform/**') }}
           path: |
@@ -79,34 +79,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: "authenticate with aws"
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
       - name: "log into ecr"
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
         with:
           mask-password: true
       - name: "log into ghcr"
         # repo and package must be linked (https://github.com/users/OWNER/packages/container/PACKAGE/settings)
         # repo must have write permissions on the package (https://github.com/users/OWNER/packages/container/PACKAGE/settings)
         # GITHUB_TOKEN must have write permissions (https://github.com/OWNER/REPO/settings/actions; Workflow permissions)
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ vars.GHCR_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: "set up qemu"
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: ${{ vars.TARGETARCH }}
       - name: "set up buildx"
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
@@ -134,15 +134,15 @@ jobs:
       COMMIT_HASH: ${{ github.sha }}
     steps:
       - name: "checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: "authenticate with aws"
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
       - name: "log into ecr"
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
         with:
           mask-password: true
       - name: "install kubectl"
