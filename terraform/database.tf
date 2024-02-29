@@ -37,6 +37,8 @@ resource "aws_rds_cluster_instance" "aws_rds_cluster_instance" {
 	instance_class = "db.t4g.medium"
 	engine = aws_rds_cluster.aws_rds_cluster.engine
 	engine_version = aws_rds_cluster.aws_rds_cluster.engine_version
+	ca_cert_identifier = "rds-ca-ecc384-g1"
+	apply_immediately = true
 }
 
 output "aws_rds_cluster_endpoint" {
