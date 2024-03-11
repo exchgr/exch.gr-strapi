@@ -146,7 +146,7 @@ jobs:
         with:
           mask-password: true
       - name: "install kubectl"
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
       - name: "fetch kubeconfig"
         run: |
           mkdir -p ~/.kube
