@@ -7154,6 +7154,7 @@ __metadata:
     react: ^18.0.0
     react-dom: ^18.0.0
     react-router-dom: ^5.2.0
+    strapi-plugin-media-prefix: ^1.0.4
     strapi-provider-upload-cloudflare: ^4.2.0
     styled-components: ^5.2.1
   languageName: unknown
@@ -13664,6 +13665,15 @@ __metadata:
   version: 1.5.0
   resolution: "statuses@npm:1.5.0"
   checksum: c469b9519de16a4bb19600205cffb39ee471a5f17b82589757ca7bd40a8d92ebb6ed9f98b5a540c5d302ccbc78f15dc03cc0280dd6e00df1335568a5d5758a5c
+  languageName: node
+  linkType: hard
+
+"strapi-plugin-media-prefix@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "strapi-plugin-media-prefix@npm:1.0.4"
+  peerDependencies:
+    "@strapi/strapi": ^4.20.0
+  checksum: b0f4695a128f2057de4a1c22c62890222cecc1734158c6783da161ac623f774cd2be56d82a31c934a7b77c2234ec9684341f17c25222a78adeb748b53c374bbe
   languageName: node
   linkType: hard
 
