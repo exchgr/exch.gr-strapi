@@ -54,3 +54,5 @@ spec:
               value: "${CLOUDFLARE_ACCOUNT_ID}"
             - name: CLOUDFLARE_API_TOKEN
               value: "${CLOUDFLARE_API_TOKEN}"
+            - name: NODE_ENV
+              value: "production"
