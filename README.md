@@ -1,3 +1,10 @@
+# exch.gr-strapi
+
+## What It Is
+exch.gr-strapi is the [strapi](https://strapi.io/) backend portion ofthe blog hosted at https://exch.gr/. It serves as a headless CMS that hosts all the data for articles, tags, collections, redirects, etc. Then, [exch.gr-11ty](https://github.com/exchgr/exch.gr-11ty) pulls the data and generates the website.
+
+More from the Strapi default README:
+
 # 🚀 Getting started with Strapi
 
 Strapi comes with a full featured [Command Line Interface](https://docs.strapi.io/developer-docs/latest/developer-resources/cli/CLI.html) (CLI) which lets you scaffold and manage your project in seconds.
