@@ -897,6 +897,8 @@ export interface ApiCollectionCollection extends Schema.CollectionType {
       'api::article.article'
     >;
     slug: Attribute.String & Attribute.Required & Attribute.Unique;
+    mailUrl: Attribute.String;
+    mailName: Attribute.String;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

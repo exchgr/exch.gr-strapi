@@ -27,6 +27,12 @@
       "type": "string",
       "required": true,
       "unique": true
+    },
+    "mailUrl": {
+      "type": "string"
+    },
+    "mailName": {
+      "type": "string"
     }
   }
 }
