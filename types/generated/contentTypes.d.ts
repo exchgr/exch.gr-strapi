@@ -899,6 +899,7 @@ export interface ApiCollectionCollection extends Schema.CollectionType {
     slug: Attribute.String & Attribute.Required & Attribute.Unique;
     mailUrl: Attribute.String;
     mailName: Attribute.String;
+    blurb: Attribute.RichText;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

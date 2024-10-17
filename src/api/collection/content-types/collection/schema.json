@@ -33,6 +33,9 @@
     },
     "mailName": {
       "type": "string"
+    },
+    "blurb": {
+      "type": "richtext"
     }
   }
 }
