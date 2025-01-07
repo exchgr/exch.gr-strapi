@@ -29,3 +29,16 @@ primary_region = 'ewr'
   cpu_kind = 'shared'
   cpus = 1
 	processes = ['app']
+
+[env]
+	APP_NAME = 'exch-gr-strapi'
+	CLOUDFLARE_ACCOUNT_ID = 'ab8348285fec6024f2b02050bdfb2243'
+	CLOUDFLARE_ZONE_ID = 'bf63f4dc453ca15d5cbe87ba5fabd599'
+	CONTAINER_PORT = '1337'
+	DATABASE_CLIENT = 'postgres'
+	DATABASE_NAME = 'exchgr'
+	DATABASE_PORT = '5432'
+	DATABASE_SSL = 'false'
+	DATABASE_USERNAME = 'root'
+	DOMAIN_NAME = 'exch.gr'
+	HOST = '0.0.0.0'
