@@ -1,15 +1,13 @@
-FROM --platform=$BUILDPLATFORM node:18-alpine AS build-base
+FROM node:18-alpine AS build-base
 
 RUN \
 		--mount=type=cache,target=/var/cache/apk\
 		apk add build-base
 
-FROM --platform=$BUILDPLATFORM build-base AS yarn
+FROM build-base AS yarn
 
 WORKDIR /app
 
-ARG TARGETARCH
-ENV npm_config_arch=$TARGETARCH
 ENV NODE_ENV=production
 
 COPY yarn.lock package.json .yarnrc.yml tsconfig.json ./
@@ -20,13 +18,13 @@ RUN \
 		--mount=type=cache,target=/app/.yarn/cache\
 		yarn
 
-FROM --platform=$BUILDPLATFORM yarn as yarn-build
+FROM yarn as yarn-build
 
 COPY . .
 
 RUN yarn build
 
-FROM --platform=$TARGETPLATFORM node:18-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
