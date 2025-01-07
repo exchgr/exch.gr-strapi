@@ -99,10 +99,10 @@ jobs:
           registry: ${{ vars.GHCR_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: "set up qemu"
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: ${{ vars.TARGETARCH }}
+#      - name: "set up qemu"
+#        uses: docker/setup-qemu-action@v3
+#        with:
+#          platforms: ${{ vars.TARGETARCH }}
       - name: "set up buildx"
         uses: docker/setup-buildx-action@v3
       - name: Build and push
@@ -113,7 +113,7 @@ jobs:
           tags: ${{ env.ECR_IMAGE_TAG }}:${{ github.sha }}
           cache-from: type=registry,ref=${{ env.GHCR_IMAGE_TAG }}:latest
           cache-to: type=registry,ref=${{ env.GHCR_IMAGE_TAG }}:latest,mode=max
-          platforms: ${{ vars.TARGETOS }}/${{ vars.TARGETARCH }}
+#          platforms: ${{ vars.TARGETOS }}/${{ vars.TARGETARCH }}
 #  apply-kubernetes:
 #    needs:
 #      - build-and-push-image
