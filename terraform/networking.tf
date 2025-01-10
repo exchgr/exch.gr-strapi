@@ -154,20 +154,6 @@ resource "aws_security_group" "aws_security_group" {
 		to_port   = data.external.env.result["DATABASE_PORT"]
 		cidr_blocks = aws_subnet.aws_subnet_private.*.cidr_block
 	}
-
-	ingress {
-		protocol = "tcp"
-		from_port = data.external.env.result["DATABASE_PORT"]
-		to_port = data.external.env.result["DATABASE_PORT"]
-		cidr_blocks = [data.external.env.result["MY_IP_CIDR"]]
-	}
-
-	egress {
-		protocol = "tcp"
-		from_port = data.external.env.result["DATABASE_PORT"]
-		to_port = data.external.env.result["DATABASE_PORT"]
-		cidr_blocks = ["0.0.0.0/0"]
-	}
 }
 
 output "elastic-ip-allocation-ids-nlb" {
