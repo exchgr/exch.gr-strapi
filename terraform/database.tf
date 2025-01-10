@@ -6,7 +6,10 @@ resource "random_password" "random_password" {
 resource "aws_db_subnet_group" "aws_db_subnet_group" {
 	name = data.external.env.result["SHORT_APP_NAME"]
 
-	subnet_ids = aws_subnet.aws_subnet_private.*.id
+	subnet_ids = concat(
+		aws_subnet.aws_subnet_private.*.id,
+		aws_subnet.aws_subnet_public.*.id,
+	)
 }
 
 resource "aws_rds_cluster" "aws_rds_cluster" {
@@ -39,6 +42,7 @@ resource "aws_rds_cluster_instance" "aws_rds_cluster_instance" {
 	engine_version = aws_rds_cluster.aws_rds_cluster.engine_version
 	ca_cert_identifier = "rds-ca-ecc384-g1"
 	apply_immediately = true
+	publicly_accessible = true
 }
 
 output "aws_rds_cluster_endpoint" {

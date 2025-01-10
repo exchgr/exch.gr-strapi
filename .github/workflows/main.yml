@@ -34,6 +34,7 @@ jobs:
     env:
       DATABASE_FINAL_SNAPSHOT_IDENTIFIER: ${{ vars.DATABASE_FINAL_SNAPSHOT_IDENTIFIER }}
       SUBJECT_ALTERNATIVE_NAMES: ${{ vars.SUBJECT_ALTERNATIVE_NAMES }}
+      MY_IP_CIDR: ${{ secrets.MY_IP_CIDR }}
     steps:
       - name: "checkout"
         uses: actions/checkout@v4
