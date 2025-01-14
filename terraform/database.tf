@@ -14,7 +14,8 @@ resource "aws_rds_cluster" "aws_rds_cluster" {
 	engine = "aurora-postgresql"
 	storage_encrypted = true
 	apply_immediately = true
-	engine_version = "17.2"
+	engine_version = "16.6"
+	allow_major_version_upgrade = true
 
 	# credentials
 	database_name = data.external.env.result["DATABASE_NAME"]
