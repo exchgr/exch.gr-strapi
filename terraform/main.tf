@@ -7,11 +7,6 @@ terraform {
 			version = "~> 4.64"
 		}
 
-		kubernetes = {
-			source = "hashicorp/kubernetes"
-			version = "~> 2.19.0"
-		}
-
 		cloudflare = {
 			source = "cloudflare/cloudflare"
 			version = "~> 3.0"
@@ -24,8 +19,4 @@ provider "aws" {
 }
 
 provider "cloudflare" {
-}
-
-provider "kubernetes" {
-	config_path = "~/.kube/config"
 }
