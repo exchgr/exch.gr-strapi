@@ -42,10 +42,6 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_wrapper: false
-      - name: "fetch kubeconfig"
-        run: |
-          mkdir -p ~/.kube
-          aws eks --region $AWS_REGION update-kubeconfig --name $SHORT_APP_NAME
       - name: "authenticate with aws"
         uses: aws-actions/configure-aws-credentials@v4
         with:
