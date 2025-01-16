@@ -10,30 +10,17 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   APP_NAME: ${{ vars.APP_NAME }}
-  SHORT_APP_NAME: ${{ vars.SHORT_APP_NAME }}
-  ECR_IMAGE_TAG: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.APP_NAME }}
-  GHCR_IMAGE_TAG: ${{ vars.GHCR_REGISTRY }}/${{ vars.APP_NAME }}
-  DATABASE_NAME: ${{ vars.DATABASE_NAME }}
-  DATABASE_USERNAME: ${{ vars.DATABASE_USERNAME }}
-  DATABASE_PORT: ${{ vars.DATABASE_PORT }}
   CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
   CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-  DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
 jobs:
   deploy-infra:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: terraform
-    outputs:
-      elastic-ip-allocation-ids-nlb: ${{ steps.terraform-output-elastic-ip-allocation-ids-nlb.outputs.output }}
-      aws-acm-certificate: ${{ steps.terraform-output-aws-acm-certificate.outputs.output }}
-      aws-rds-cluster-endpoint: ${{ steps.terraform-output-aws-rds-cluster-endpoint.outputs.output }}
     env:
-      DATABASE_FINAL_SNAPSHOT_IDENTIFIER: ${{ vars.DATABASE_FINAL_SNAPSHOT_IDENTIFIER }}
-      SUBJECT_ALTERNATIVE_NAMES: ${{ vars.SUBJECT_ALTERNATIVE_NAMES }}
       ADMIN_CNAME: ${{ vars.ADMIN_CNAME }}
     steps:
       - name: "checkout"
@@ -62,94 +49,6 @@ jobs:
       - name: "terraform apply"
         if: steps.cache.outputs.cache-hit != 'true'
         run: terraform apply -auto-approve
-      - name: "terraform output 1a"
-        id: terraform-output-elastic-ip-allocation-ids-nlb
-        run: echo "output=$(terraform output -raw elastic-ip-allocation-ids-nlb)" >> $GITHUB_OUTPUT
-      - name: "terraform output aws rds cluster endpoint"
-        id: terraform-output-aws-rds-cluster-endpoint
-        run: echo "output=$(terraform output -raw aws_rds_cluster_endpoint)" >> $GITHUB_OUTPUT
-      - name: "terraform output certificate arn"
-        id: terraform-output-aws-acm-certificate
-        run: echo "output=$(terraform output -raw aws-acm-certificate | cut -d "/" -f2)" >> $GITHUB_OUTPUT
-#  build-and-push-image:
-#    needs: deploy-infra
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: "checkout"
-#        uses: actions/checkout@v4
-#      - name: "authenticate with aws"
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-region: ${{ env.AWS_REGION }}
-#          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-#          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-#      - name: "log into ecr"
-#        uses: aws-actions/amazon-ecr-login@v2
-#        with:
-#          mask-password: true
-#      - name: "log into ghcr"
-#        # repo and package must be linked (https://github.com/users/OWNER/packages/container/PACKAGE/settings)
-#        # repo must have write permissions on the package (https://github.com/users/OWNER/packages/container/PACKAGE/settings)
-#        # GITHUB_TOKEN must have write permissions (https://github.com/OWNER/REPO/settings/actions; Workflow permissions)
-#        uses: docker/login-action@v3
-#        with:
-#          registry: ${{ vars.GHCR_REGISTRY }}
-#          username: ${{ github.actor }}
-#          password: ${{ secrets.GITHUB_TOKEN }}
-#      - name: "set up qemu"
-#        uses: docker/setup-qemu-action@v3
-#        with:
-#          platforms: ${{ vars.TARGETARCH }}
-#      - name: "set up buildx"
-#        uses: docker/setup-buildx-action@v3
-#      - name: Build and push
-#        uses: docker/build-push-action@v5
-#        with:
-#          context: .
-#          push: true
-#          tags: ${{ env.ECR_IMAGE_TAG }}:${{ github.sha }}
-#          cache-from: type=registry,ref=${{ env.GHCR_IMAGE_TAG }}:latest
-#          cache-to: type=registry,ref=${{ env.GHCR_IMAGE_TAG }}:latest,mode=max
-#          platforms: ${{ vars.TARGETOS }}/${{ vars.TARGETARCH }}
-#  apply-kubernetes:
-#    needs:
-#      - build-and-push-image
-#      - deploy-infra
-#    runs-on: ubuntu-latest
-#    env:
-#      HOST: ${{ vars.HOST }}
-#      APP_KEYS: ${{ secrets.APP_KEYS }}
-#      API_TOKEN_SALT: ${{ secrets.API_TOKEN_SALT }}
-#      ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
-#      DATABASE_CLIENT: ${{ vars.DATABASE_CLIENT }}
-#      DATABASE_HOST: ${{ needs.deploy-infra.outputs.aws-rds-cluster-endpoint }}
-#      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-#      DATABASE_SSL: ${{ vars.DATABASE_SSL }}
-#      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-#      ELASTIC_IP_ALLOCATION_IDS_NLB: ${{ needs.deploy-infra.outputs.elastic-ip-allocation-ids-nlb }}
-#      AWS_ACM_CERTIFICATE: ${{ needs.deploy-infra.outputs.aws-acm-certificate }}
-#      COMMIT_HASH: ${{ github.sha }}
-#    steps:
-#      - name: "checkout"
-#        uses: actions/checkout@v4
-#      - name: "authenticate with aws"
-#        uses: aws-actions/configure-aws-credentials@v4
-#        with:
-#          aws-region: ${{ env.AWS_REGION }}
-#          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-#          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-#      - name: "log into ecr"
-#        uses: aws-actions/amazon-ecr-login@v2
-#        with:
-#          mask-password: true
-#      - name: "install kubectl"
-#        uses: azure/setup-kubectl@v4
-#      - name: "fetch kubeconfig"
-#        run: |
-#          mkdir -p ~/.kube
-#          aws eks --region $AWS_REGION update-kubeconfig --name $SHORT_APP_NAME
-#      - name: "apply kubernetes manifests"
-#        run: "kubernetes/apply.sh"
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
