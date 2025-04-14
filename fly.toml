@@ -5,7 +5,6 @@
 
 app = 'exch-gr-strapi'
 primary_region = 'ewr'
-swap_size_mb = 1024
 
 [build]
   dockerfile = "Dockerfile"
