@@ -43,3 +43,8 @@ primary_region = 'ewr'
 	HOST = '0.0.0.0'
 	NODE_ENV = 'production'
 	DATABASE_POOL_MIN = '0'
+
+[[restart]]
+	policy = "always"
+	retries = 10
+	processes = ["app"]
