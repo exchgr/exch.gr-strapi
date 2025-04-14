@@ -53,9 +53,9 @@ export default ({ env }) => {
 				acquireTimeoutMillis: env.int('DATABASE_ACQUIRE_TIMEOUT_MILLIS', 60000),
 				createTimeoutMillis: env.int('DATABASE_CREATE_TIMEOUT_MILLIS', 30000),
 				destroyTimeoutMillis: env.int('DATABASE_DESTROY_TIMEOUT_MILLIS', 5000),
-				idleTimeoutMillis: env.int('IDLE_TIMEOUT_MILLIS', 10000),
-				reapIntervalMillis: env.int('IDLE_TIMEOUT_MILLIS', 1000),
-				createRetryIntervalMillis: env.int('CREATE_RETRY_INTERVAL_MILLIS', 200)
+				idleTimeoutMillis: env.int('DATABASE_IDLE_TIMEOUT_MILLIS', 30000),
+				reapIntervalMillis: env.int('DATABASE_REAP_INTERVAL_MILLIS', 1000),
+				createRetryIntervalMillis: env.int('DATABASE_CREATE_RETRY_INTERVAL_MILLIS', 200)
 			},
     },
     sqlite: {
