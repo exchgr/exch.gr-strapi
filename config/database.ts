@@ -47,7 +47,16 @@ export default ({ env }) => {
         },
         schema: env('DATABASE_SCHEMA', 'public'),
       },
-      pool: { min: env.int('DATABASE_POOL_MIN', 2), max: env.int('DATABASE_POOL_MAX', 90) },
+      pool: {
+				min: env.int('DATABASE_POOL_MIN', 2),
+				max: env.int('DATABASE_POOL_MAX', 90),
+				acquireTimeoutMillis: env.int('DATABASE_ACQUIRE_TIMEOUT_MILLIS', 60000),
+				createTimeoutMillis: env.int('DATABASE_CREATE_TIMEOUT_MILLIS', 30000),
+				destroyTimeoutMillis: env.int('DATABASE_DESTROY_TIMEOUT_MILLIS', 5000),
+				idleTimeoutMillis: env.int('IDLE_TIMEOUT_MILLIS', 10000),
+				reapIntervalMillis: env.int('IDLE_TIMEOUT_MILLIS', 1000),
+				createRetryIntervalMillis: env.int('CREATE_RETRY_INTERVAL_MILLIS', 200)
+			},
     },
     sqlite: {
       connection: {
