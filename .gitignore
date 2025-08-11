@@ -114,6 +114,7 @@ dist
 build
 .strapi-updater.json
 _site/
+.strapi/
 
 ############################
 # Yarn
