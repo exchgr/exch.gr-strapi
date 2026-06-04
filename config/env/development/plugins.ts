@@ -4,7 +4,7 @@ module.exports = ({ env }) => ({
 	},
 	graphql: {
 		config: {
-			v4CompatibilityMode: true,
+			v4CompatibilityMode: false,
 		},
 		amountLimit: 100000,
 	}
