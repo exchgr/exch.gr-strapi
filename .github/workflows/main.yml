@@ -24,20 +24,20 @@ jobs:
       ADMIN_CNAME: ${{ vars.ADMIN_CNAME }}
     steps:
       - name: "checkout"
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: "setup terraform"
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
       - name: "authenticate with aws"
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
       - name: "cache terraform state"
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: ${{ hashFiles('terraform/**') }}
           path: |
@@ -55,8 +55,8 @@ jobs:
     needs: deploy-infra
     concurrency: deploy-group    # optional: ensure only one action runs at a time
     steps:
-      - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@v1.4
       - run: flyctl deploy --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
