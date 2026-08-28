@@ -11,16 +11,16 @@
     "install-deps": "yarn install"
   },
   "dependencies": {
-    "@strapi/plugin-graphql": "5.47.1",
-    "@strapi/plugin-users-permissions": "5.47.1",
-    "@strapi/strapi": "5.47.1",
+    "@strapi/plugin-graphql": "5.52.2",
+    "@strapi/plugin-users-permissions": "5.52.2",
+    "@strapi/strapi": "5.52.2",
     "pg": "^8.21.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-router-dom": "^6.0.0",
+    "react-router-dom": "^6.30.4",
     "strapi-plugin-media-prefix": "^1.0.6",
     "strapi-provider-upload-cloudflare": "^4.3.0",
-    "styled-components": "^6.4.2"
+    "styled-components": "^6.5.2"
   },
   "author": {
     "name": "Elle Mundy"
