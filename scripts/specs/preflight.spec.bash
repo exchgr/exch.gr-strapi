@@ -11,7 +11,7 @@ source "$SPEC_DIR/../lib/preflight.bash"
 IFS=$' \t\n'
 
 # --- REQUIRED_TOOLS ---
-assert_eq "$(printf '%s\n' "${REQUIRED_TOOLS[@]}")" $'yarn\ngit\ngh\njq\ncurl\nasdf' "REQUIRED_TOOLS covers yarn git gh jq curl asdf"
+assert_eq "$(printf '%s\n' "${REQUIRED_TOOLS[@]}")" $'yarn\ngit\ngh\njq\nyq\ncurl\nasdf' "REQUIRED_TOOLS covers yarn git gh jq yq curl asdf"
 
 # --- derive_gh_repo (command seam: mocked git remote get-url) ---
 git() { printf 'https://github.com/exchgr/exch.gr-strapi.git\n'; }

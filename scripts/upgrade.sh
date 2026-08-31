@@ -1,45 +1,30 @@
 #!/usr/bin/env bash
-# scripts/upgrade.sh — thin entry point for the idempotent exch.gr Strapi upgrade.
-#
-# Phases (in order): preflight → yarn → node → deps
-#
+# scripts/upgrade.sh — thin entry point for the idempotent exch.gr Strapi
+# upgrade (phases: preflight → yarn → node → deps → types → workflows → docker).
 # --dry-run prints every mutation without applying it.
-# Sourcing this file (e.g. from the specs) never executes a phase: main runs only
-# when the file is executed directly.
-#
-# Canonical sourcing order for the lib modules (each module sources its own
-# dependencies, so repeated sourcing is safe):
-#   lib/common.bash
-#   lib/helpers.bash
-#   lib/lookups.bash
-#   lib/preflight.bash
-#   lib/yarn.bash
-#   lib/node.bash
-#   lib/deps.bash
 set -uo pipefail
 IFS=$'\n\t'
 
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib"
-# shellcheck source=scripts/lib/common.bash
 source "$LIB_DIR/common.bash"
-# shellcheck source=scripts/lib/helpers.bash
 source "$LIB_DIR/helpers.bash"
-# shellcheck source=scripts/lib/lookups.bash
 source "$LIB_DIR/lookups.bash"
-# shellcheck source=scripts/lib/preflight.bash
 source "$LIB_DIR/preflight.bash"
-# shellcheck source=scripts/lib/yarn.bash
 source "$LIB_DIR/yarn.bash"
-# shellcheck source=scripts/lib/node.bash
 source "$LIB_DIR/node.bash"
-# shellcheck source=scripts/lib/deps.bash
 source "$LIB_DIR/deps.bash"
+source "$LIB_DIR/types.bash"
+source "$LIB_DIR/workflows.bash"
+source "$LIB_DIR/docker.bash"
 
 phase_order() {
   phase_preflight
   phase_yarn
   phase_node
   phase_deps
+  phase_types
+  phase_workflows
+  phase_dockerfile
 }
 
 # --- entry point -------------------------------------------------------------------

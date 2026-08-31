@@ -19,15 +19,20 @@ phase_preflight() { mock_phase preflight; }
 phase_yarn() { mock_phase yarn; }
 phase_node() { mock_phase node; }
 phase_deps() { mock_phase deps; }
+phase_types() { mock_phase types; }
+phase_workflows() { mock_phase workflows; }
+phase_dockerfile() { mock_phase dockerfile; }
 
 phase_order
-assert_eq "$CALLS" $'preflight\nyarn\nnode\ndeps\n' "phase_order dispatches preflight yarn node deps in order"
+assert_eq "$CALLS" $'preflight\nyarn\nnode\ndeps\ntypes\nworkflows\ndockerfile\n' \
+  "phase_order dispatches preflight yarn node deps types workflows dockerfile in order"
 
 # --- main parses --dry-run and dispatches ---
 DRY_RUN=0
 CALLS=""
 main --dry-run
-assert_eq "$CALLS" $'preflight\nyarn\nnode\ndeps\n' "main --dry-run dispatches phase_order"
+assert_eq "$CALLS" $'preflight\nyarn\nnode\ndeps\ntypes\nworkflows\ndockerfile\n' \
+  "main --dry-run dispatches phase_order"
 assert_eq "$DRY_RUN" "1" "main --dry-run sets DRY_RUN=1"
 
 # --- main rejects unknown arguments ---

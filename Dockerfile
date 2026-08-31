@@ -14,6 +14,8 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 COPY yarn.lock package.json .yarnrc.yml tsconfig.json ./
 COPY .yarn .yarn
 
+RUN yarn set version berry
+
 RUN \
 		--mount=type=cache,target=/app/.yarn/cache\
 		yarn

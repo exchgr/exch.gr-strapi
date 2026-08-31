@@ -30,13 +30,10 @@ is_vtag() {
   [[ "$1" =~ ^v[0-9]+([.][0-9]+)*$ ]]
 }
 
-pick_action_tag() {
-  local current="$1" candidate="$2"
-  if ! is_vtag "$current" || ! is_vtag "$candidate"; then
-    printf '%s\n' "$current"
-  elif (( $(semver_major "$candidate") > $(semver_major "$current") )); then
-    printf '%s\n' "$candidate"
-  else
-    printf '%s\n' "$current"
-  fi
+action_tag_newer() {
+  # True (status 0) iff $2 is a `v<major>` tag whose major is strictly greater
+  # than $1's parseable major. @master, non-v tags, and garbage compare false.
+  is_vtag "$1" || return 1
+  is_vtag "$2" || return 1
+  (( $(semver_major "$2") > $(semver_major "$1") ))
 }

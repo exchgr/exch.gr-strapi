@@ -41,12 +41,17 @@ fixture='[{"state":"open","dependency":{"package":{"name":"@strapi/strapi"}}},{"
 actual="$(dependabot_pkgs <<<"$fixture")"
 assert_eq "$actual" $'@strapi/strapi\nqs' "dependabot_pkgs distinct open scoped+plain"
 
-# --- pick_action_tag ---
-assert_eq "$(pick_action_tag "v4" "v6")" "v6" "pick_action_tag v4 v6 -> v6"
-assert_eq "$(pick_action_tag "@master" "v1.4")" "@master" "pick_action_tag @master v1.4 -> @master"
-assert_eq "$(pick_action_tag "v1.4" "")" "v1.4" "pick_action_tag v1.4 empty -> v1.4"
-assert_eq "$(pick_action_tag "v4" "somebranch")" "v4" "pick_action_tag v4 somebranch -> v4"
-assert_eq "$(pick_action_tag "v7" "v7")" "v7" "pick_action_tag v7 v7 equal major -> keep"
+# --- action_tag_newer ---
+rc=0; action_tag_newer "v4" "v6" || rc=$?
+assert_status "$rc" 0 "action_tag_newer v4 v6 -> 0 (v6 is a strictly newer major)"
+rc=0; action_tag_newer "@master" "v1.4" || rc=$?
+assert_status "$rc" 1 "action_tag_newer @master v1.4 -> 1 (unparseable ref)"
+rc=0; action_tag_newer "v1.4" "" || rc=$?
+assert_status "$rc" 1 "action_tag_newer v1.4 empty -> 1 (no candidate)"
+rc=0; action_tag_newer "v4" "somebranch" || rc=$?
+assert_status "$rc" 1 "action_tag_newer v4 somebranch -> 1 (non-v candidate)"
+rc=0; action_tag_newer "v7" "v7" || rc=$?
+assert_status "$rc" 1 "action_tag_newer v7 v7 -> 1 (equal major)"
 
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

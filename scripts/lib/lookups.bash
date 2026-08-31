@@ -26,13 +26,17 @@ latest_yarn_version() {
 }
 
 parse_uses_line() {
-  # "uses: owner/repo@ref" (list dashes tolerated) -> "owner/repo ref"
-  local line="${1#*uses:}"
-  line="${line#"${line%%[![:space:]]*}"}"
-  local repo="${line%%@*}"
-  local ref="${line#*@}"
-  [[ "$line" == *@* ]] || return 1
-  printf '%s %s\n' "$repo" "$ref"
+  # Input: a `uses: owner/repo@ref` workflow line (leading list dash tolerated).
+  # Output: "owner/repo ref"; return 1 when there is no @ref after "uses:".
+  # Step 1 (yq): parse the line as yaml — bare map or sequence item — and print
+  # the raw `uses` value; lines without a usable `uses:` yield empty. The
+  # fallback guard keeps a yaml parse failure a normal empty result, not a crash.
+  local value
+  value="$(printf '%s\n' "$1" | yq -r '.[0].uses? // .uses?' 2>/dev/null || true)"
+  # Step 2: one anchored regex splits at the FIRST @ into "owner/repo ref".
+  value="$(printf '%s' "$value" | sed -En 's/^([^@]+)@(.+)$/\1 \2/p')"
+  [[ -n "$value" ]] || return 1
+  printf '%s\n' "$value"
 }
 
 parse_remote_tags() {

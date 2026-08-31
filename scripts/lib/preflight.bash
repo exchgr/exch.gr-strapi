@@ -4,7 +4,7 @@
 # shellcheck source=scripts/lib/common.bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.bash"
 
-REQUIRED_TOOLS=(yarn git gh jq curl asdf)
+REQUIRED_TOOLS=(yarn git gh jq yq curl asdf)
 
 derive_gh_repo() {
   local url
