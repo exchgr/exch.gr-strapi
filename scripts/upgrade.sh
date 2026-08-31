@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/upgrade.sh — thin entry point for the idempotent exch.gr Strapi upgrade.
 #
-# Phases (in order): preflight → yarn → node
+# Phases (in order): preflight → yarn → node → deps
 #
 # --dry-run prints every mutation without applying it.
 # Sourcing this file (e.g. from the specs) never executes a phase: main runs only
@@ -15,6 +15,7 @@
 #   lib/preflight.bash
 #   lib/yarn.bash
 #   lib/node.bash
+#   lib/deps.bash
 set -uo pipefail
 IFS=$'\n\t'
 
@@ -31,11 +32,14 @@ source "$LIB_DIR/preflight.bash"
 source "$LIB_DIR/yarn.bash"
 # shellcheck source=scripts/lib/node.bash
 source "$LIB_DIR/node.bash"
+# shellcheck source=scripts/lib/deps.bash
+source "$LIB_DIR/deps.bash"
 
 phase_order() {
   phase_preflight
   phase_yarn
   phase_node
+  phase_deps
 }
 
 # --- entry point -------------------------------------------------------------------

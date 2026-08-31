@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# scripts/specs/dispatch.spec.bash — orchestration-level spec for scripts/upgrade.sh
-# (thin entry point: sourcing, arg parsing, phase dispatch, bottom execution guard).
-# Standalone: bash scripts/specs/dispatch.spec.bash
+# scripts/specs/upgrade.spec.bash — outer-shell spec for scripts/upgrade.sh
+# (the entry point shell: sourcing, arg parsing, phase dispatch, bottom execution guard).
+# Standalone: bash scripts/specs/upgrade.spec.bash
 set -u
 SPEC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 UPGRADE_SH="$SPEC_DIR/../upgrade.sh"
@@ -18,15 +18,16 @@ mock_phase() { CALLS+="$1"$'\n'; }
 phase_preflight() { mock_phase preflight; }
 phase_yarn() { mock_phase yarn; }
 phase_node() { mock_phase node; }
+phase_deps() { mock_phase deps; }
 
 phase_order
-assert_eq "$CALLS" $'preflight\nyarn\nnode\n' "phase_order dispatches preflight yarn node in order"
+assert_eq "$CALLS" $'preflight\nyarn\nnode\ndeps\n' "phase_order dispatches preflight yarn node deps in order"
 
 # --- main parses --dry-run and dispatches ---
 DRY_RUN=0
 CALLS=""
 main --dry-run
-assert_eq "$CALLS" $'preflight\nyarn\nnode\n' "main --dry-run dispatches phase_order"
+assert_eq "$CALLS" $'preflight\nyarn\nnode\ndeps\n' "main --dry-run dispatches phase_order"
 assert_eq "$DRY_RUN" "1" "main --dry-run sets DRY_RUN=1"
 
 # --- main rejects unknown arguments ---

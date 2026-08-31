@@ -28,7 +28,7 @@ assert_status() {
 }
 
 # Bottom guard: when run standalone, print totals and exit on FAIL.
-# When sourced by the combined runner (upgrade.spec.bash), do nothing — the
+# When sourced by the combined runner (all.spec.bash), do nothing — the
 # runner owns the single combined totals print.
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
