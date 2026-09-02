@@ -6,8 +6,8 @@
 # Standalone: bash scripts/specs/workflows.spec.bash
 set -u
 SPEC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/specs/common.spec.bash
-source "$SPEC_DIR/common.spec.bash"
+# shellcheck source=scripts/specs/test-utils.bash
+source "$SPEC_DIR/test-utils.bash"
 # shellcheck source=scripts/lib/workflows.bash
 source "$SPEC_DIR/../lib/workflows.bash"
 # The sourced lib hardens IFS; restore the default for spec-internal string ops.

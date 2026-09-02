@@ -2,10 +2,10 @@
 # scripts/all.spec.bash — combined spec runner. Run: bash scripts/all.spec.bash
 set -u
 SPEC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/specs"
-# shellcheck source=scripts/specs/common.spec.bash
-source "$SPEC_DIR/common.spec.bash"
+# shellcheck source=scripts/specs/test-utils.bash
+source "$SPEC_DIR/test-utils.bash"
 
-for spec in helpers lookups preflight yarn node deps types workflows docker cli upgrade; do
+for spec in common helpers lookups preflight yarn node deps types workflows docker cli upgrade; do
   source "$SPEC_DIR/$spec.spec.bash"
 done
 

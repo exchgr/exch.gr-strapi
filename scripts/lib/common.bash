@@ -12,14 +12,17 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 # --- logging -------------------------------------------------------------------
 
 log() {
+  local IFS=' '
   printf '%s\n' "$*"
 }
 
 warn() {
+  local IFS=' '
   printf '%s\n' "$*" >&2
 }
 
 die() {
+  local IFS=' '
   warn "upgrade.sh: $*"
   exit 1
 }
@@ -27,6 +30,7 @@ die() {
 # --- execution wrappers (dry-run aware) ------------------------------------------
 
 run() {
+  local IFS=' '
   if (( DRY_RUN )); then
     log "[dry-run] $*"
   else
@@ -37,6 +41,7 @@ run() {
 
 apply_edit() {
   local description="$1"
+  local IFS=' '
   shift
   if (( DRY_RUN )); then
     log "[dry-run] edit: $description"

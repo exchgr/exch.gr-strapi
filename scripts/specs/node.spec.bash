@@ -3,8 +3,8 @@
 # Standalone: bash scripts/specs/node.spec.bash
 set -u
 SPEC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/specs/common.spec.bash
-source "$SPEC_DIR/common.spec.bash"
+# shellcheck source=scripts/specs/test-utils.bash
+source "$SPEC_DIR/test-utils.bash"
 # shellcheck source=scripts/lib/node.bash
 source "$SPEC_DIR/../lib/node.bash"
 # The sourced lib hardens IFS; restore the default for spec-internal string ops.

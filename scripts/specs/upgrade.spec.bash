@@ -6,8 +6,8 @@
 set -u
 SPEC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 UPGRADE_SH="$SPEC_DIR/../upgrade.sh"
-# shellcheck source=scripts/specs/common.spec.bash
-source "$SPEC_DIR/common.spec.bash"
+# shellcheck source=scripts/specs/test-utils.bash
+source "$SPEC_DIR/test-utils.bash"
 # shellcheck source=scripts/upgrade.sh
 source "$UPGRADE_SH"
 # The sourced entry point hardens IFS; restore the default for spec-internal string ops.
@@ -76,6 +76,17 @@ assert_eq "$out" "" "a failing preflight dispatches no phases at all"
 
 # restore the happy-path mocks for the remaining guard tests
 phase_preflight() { echo preflight; }
+
+# --- a failing phase aborts the run and propagates its status ---
+phase_deps() { echo deps; return 3; }
+rc=0
+out="$( { main -d 2>/dev/null; } )" || rc=$?
+assert_status "$rc" 1 "a failing phase aborts the run with a non-zero exit"
+assert_eq "$out" $'preflight\ndeps' \
+  "a failing phase stops the run before later phases and the summary"
+err="$( { main -d 2>&1 1>/dev/null; } )" || rc=$?
+assert_contains "$err" "phase_deps failed" "a failing phase leaves a named diagnostic on stderr"
+phase_deps() { echo deps; }
 
 # --- main --dry-run -y: DRY_RUN set (last echo carries it out) and only yarn ---
 dispatch_of="$(DRY_RUN=0; main --dry-run -y; echo "DRY_RUN=$DRY_RUN")"

@@ -7,8 +7,8 @@
 # Standalone: bash scripts/specs/docker.spec.bash
 set -u
 SPEC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/specs/common.spec.bash
-source "$SPEC_DIR/common.spec.bash"
+# shellcheck source=scripts/specs/test-utils.bash
+source "$SPEC_DIR/test-utils.bash"
 # shellcheck source=scripts/lib/docker.bash
 source "$SPEC_DIR/../lib/docker.bash"
 # The sourced lib hardens IFS; restore the default for spec-internal string ops.
