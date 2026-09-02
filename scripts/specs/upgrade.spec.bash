@@ -56,6 +56,27 @@ dispatch_of="$(main -dt)"
 assert_eq "$dispatch_of" $'preflight\ndeps\ntransitive\nsummary' \
   "main -dt dispatches preflight deps transitive summary exactly"
 
+# --- hard-error dispatch: a failing phase must abort the whole run — no later
+# phase dispatched, no summary, non-zero exit (blast-radius control) ---
+phase_deps() { echo deps; return 1; }
+
+rc=0
+out="$( { main -dt 2>&1 1>/dev/null; } )" || rc=$?
+assert_status "$rc" 1 "main aborts with non-zero exit when a phase fails"
+assert_contains "$out" "phase_deps failed" "main reports which phase failed on stderr"
+
+out="$( { main -dt 2>/dev/null; } )" || rc=$?
+assert_eq "$out" $'preflight\ndeps' \
+  "a failing phase stops dispatch: later phases and summary are never run"
+
+phase_deps() { echo deps; }
+phase_preflight() { return 1; }
+out="$( { main -dt 2>/dev/null; } )" || rc=$?
+assert_eq "$out" "" "a failing preflight dispatches no phases at all"
+
+# restore the happy-path mocks for the remaining guard tests
+phase_preflight() { echo preflight; }
+
 # --- main --dry-run -y: DRY_RUN set (last echo carries it out) and only yarn ---
 dispatch_of="$(DRY_RUN=0; main --dry-run -y; echo "DRY_RUN=$DRY_RUN")"
 assert_eq "$dispatch_of" $'preflight\nyarn\nsummary\nDRY_RUN=1' \
