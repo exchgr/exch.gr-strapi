@@ -5,7 +5,7 @@ SPEC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/specs"
 # shellcheck source=scripts/specs/common.spec.bash
 source "$SPEC_DIR/common.spec.bash"
 
-for spec in helpers lookups preflight yarn node deps types workflows docker upgrade; do
+for spec in helpers lookups preflight yarn node deps types workflows docker cli upgrade; do
   source "$SPEC_DIR/$spec.spec.bash"
 done
 

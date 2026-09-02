@@ -8,7 +8,8 @@
     "start": "strapi start",
     "build": "strapi build",
     "strapi": "strapi",
-    "install-deps": "yarn install"
+    "install-deps": "yarn install",
+    "upgrade": "bash scripts/upgrade.sh"
   },
   "dependencies": {
     "@strapi/plugin-graphql": "5.52.2",

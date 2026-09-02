@@ -27,6 +27,16 @@ assert_status() {
   fi
 }
 
+assert_contains() {
+  local haystack="$1" needle="$2" label="$3"
+  if [[ "$haystack" == *"$needle"* ]]; then
+    PASS=$((PASS + 1))
+  else
+    FAIL=$((FAIL + 1))
+    printf 'FAIL: %s\n  expected to contain: <%s>\n  actual: <%s>\n' "$label" "$needle" "$haystack" >&2
+  fi
+}
+
 # Bottom guard: when run standalone, print totals and exit on FAIL.
 # When sourced by the combined runner (all.spec.bash), do nothing — the
 # runner owns the single combined totals print.

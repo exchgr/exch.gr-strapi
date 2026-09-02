@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # scripts/specs/upgrade.spec.bash — outer-shell spec for scripts/upgrade.sh
-# (the entry point shell: sourcing, arg parsing, phase dispatch, bottom execution guard).
+# (entry-point integration: main's phase dispatch, phase_summary, bottom
+# execution guard). Arg-parsing units live in cli.spec.bash.
 # Standalone: bash scripts/specs/upgrade.spec.bash
 set -u
 SPEC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,36 +13,74 @@ source "$UPGRADE_SH"
 # The sourced entry point hardens IFS; restore the default for spec-internal string ops.
 IFS=$' \t\n'
 
-# --- phase_order dispatches phases in order (phases mocked: happy path only) ---
-CALLS=""
-mock_phase() { CALLS+="$1"$'\n'; }
-phase_preflight() { mock_phase preflight; }
-phase_yarn() { mock_phase yarn; }
-phase_node() { mock_phase node; }
-phase_deps() { mock_phase deps; }
-phase_types() { mock_phase types; }
-phase_workflows() { mock_phase workflows; }
-phase_dockerfile() { mock_phase dockerfile; }
+# Scratch space for fixtures; the EXIT trap removes it even on a crashed run.
+spec_tmp="${TMPDIR:-/tmp}/upgrade-spec.$$"
+mkdir -p "$spec_tmp"
+trap 'rm -rf "$spec_tmp"' EXIT
 
-phase_order
-assert_eq "$CALLS" $'preflight\nyarn\nnode\ndeps\ntypes\nworkflows\ndockerfile\n' \
-  "phase_order dispatches preflight yarn node deps types workflows dockerfile in order"
+# --- phase_summary (real implementation against a read-only fixture repo) ---
+summary_repo="$spec_tmp/summary"
+mkdir -p "$summary_repo"
+printf '{\n  "packageManager": "yarn@4.18.0"\n}\n' > "$summary_repo/package.json"
+printf 'nodejs 24.9.0\n' > "$summary_repo/.tool-versions"
+summary_out="$(
+  REPO_DIR="$summary_repo"
+  WANT_ALL=0 WANT_YARN=0 WANT_NODE=0 WANT_DEPS=1 WANT_TRANSITIVE=1
+  WANT_TYPES=0 WANT_WORKFLOWS=0 WANT_DOCKERFILE=0
+  phase_summary
+)"
+assert_eq "$summary_out" \
+  $'summary: ran [deps transitive]\nsummary: resolved yarn=yarn@4.18.0 node=24.9.0\nsummary: inspect \'git diff\' before committing' \
+  "phase_summary logs the selection, resolved yarn/node, and the git-diff reminder"
 
-# --- main parses --dry-run and dispatches ---
-DRY_RUN=0
-CALLS=""
-main --dry-run
-assert_eq "$CALLS" $'preflight\nyarn\nnode\ndeps\ntypes\nworkflows\ndockerfile\n' \
-  "main --dry-run dispatches phase_order"
-assert_eq "$DRY_RUN" "1" "main --dry-run sets DRY_RUN=1"
+# --- dispatch: phases mocked to echo their name, so capturing main's stdout in
+# a subshell records the dispatched sequence (no recorder variables or files) ---
+phase_preflight() { echo preflight; }
+phase_yarn() { echo yarn; }
+phase_node() { echo node; }
+phase_deps() { echo deps; }
+phase_transitive() { echo transitive; }
+phase_types() { echo types; }
+phase_workflows() { echo workflows; }
+phase_dockerfile() { echo dockerfile; }
+phase_summary() { echo summary; }
 
-# --- main rejects unknown arguments ---
+# --- main --all dispatches preflight + all seven phases + summary, in order ---
+dispatch_of="$(main --all)"
+assert_eq "$dispatch_of" \
+  $'preflight\nyarn\nnode\ndeps\ntransitive\ntypes\nworkflows\ndockerfile\nsummary' \
+  "main --all dispatches all seven phases in canonical order"
+
+# --- main -dt: preflight -> deps -> transitive -> summary, exactly ---
+dispatch_of="$(main -dt)"
+assert_eq "$dispatch_of" $'preflight\ndeps\ntransitive\nsummary' \
+  "main -dt dispatches preflight deps transitive summary exactly"
+
+# --- main --dry-run -y: DRY_RUN set (last echo carries it out) and only yarn ---
+dispatch_of="$(DRY_RUN=0; main --dry-run -y; echo "DRY_RUN=$DRY_RUN")"
+assert_eq "$dispatch_of" $'preflight\nyarn\nsummary\nDRY_RUN=1' \
+  "main --dry-run -y sets DRY_RUN=1 and dispatches only yarn"
+
+# --- no selection: usage on stderr, exit 2, no phases dispatched ---
 rc=0
-( main "bogus-arg" ) || rc=$?
-assert_status "$rc" 1 "main unknown argument dies with status 1"
+err="$( { main 2>&1 1>/dev/null; } )" || rc=$?
+assert_status "$rc" 2 "main with no selection exits 2"
+assert_contains "$err" "Usage:" "main with no selection prints usage to stderr"
+
+rc=0
+out="$( { main 2>/dev/null; } )" || rc=$?
+assert_status "$rc" 2 "main with no selection exits 2 on the stdout-only capture"
+assert_eq "$out" "" "main with no selection dispatches no phases"
+
+# --- unknown flag: exit 2, no phases dispatched ---
+rc=0
+out="$( { main --bogus 2>/dev/null; } )" || rc=$?
+assert_status "$rc" 2 "main --bogus exits 2"
+assert_eq "$out" "" "main --bogus dispatches no phases"
 
 # --- bottom execution guard: stub PATH makes preflight deterministically die ---
-stubdir="$(mktemp -d)"
+stubdir="$spec_tmp/stub"
+mkdir -p "$stubdir"
 for guard_tool in yarn git gh jq curl asdf; do
   printf '#!/usr/bin/env sh\nexit 9\n' > "$stubdir/$guard_tool"
   chmod +x "$stubdir/$guard_tool"
@@ -57,11 +96,12 @@ rc=0
 assert_status "$rc" 0 "sourcing upgrade.sh never executes phases (guard honored)"
 
 # Direct execution: guard fires, main runs, preflight dies on the stub PATH.
+# A selection is required to get past arg parsing and reach preflight.
 rc=0
 (
   PATH="$stubdir:$PATH"
   unset UPGRADE_SH_SOURCE_ONLY
-  bash "$UPGRADE_SH" >/dev/null 2>&1
+  bash "$UPGRADE_SH" --all >/dev/null 2>&1
 ) || rc=$?
 assert_status "$rc" 1 "direct execution dispatches main (preflight dies on stub PATH)"
 
@@ -70,11 +110,9 @@ rc=0
 (
   PATH="$stubdir:$PATH"
   export UPGRADE_SH_SOURCE_ONLY=1
-  bash "$UPGRADE_SH" >/dev/null 2>&1
+  bash "$UPGRADE_SH" --all >/dev/null 2>&1
 ) || rc=$?
 assert_status "$rc" 0 "UPGRADE_SH_SOURCE_ONLY=1 suppresses main on direct execution"
-
-rm -rf "$stubdir"
 
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
