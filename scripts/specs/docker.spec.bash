@@ -16,7 +16,7 @@ IFS=$' \t\n'
 
 dtmp="$(mktemp -d)"
 
-# --- fresh fixture: node:22-alpine rewritten to the latest node LTS ---
+# --- major bump: node:22-alpine rewritten to the latest LTS MAJOR alias ---
 mkdir -p "$dtmp/fresh"
 cat > "$dtmp/fresh/Dockerfile" <<'EOF'
 FROM node:22-alpine AS build-base
@@ -42,12 +42,15 @@ EOF
   REPO_DIR="$dtmp/fresh" phase_dockerfile
 ) > /dev/null
 df="$dtmp/fresh/Dockerfile"
-assert_eq "$(grep -c 'FROM node:24.99.0-alpine' "$df")" "2" \
-  "phase_dockerfile rewrites every node:22-alpine stage to the latest node LTS"
+assert_eq "$(grep -c 'FROM node:24-alpine' "$df")" "2" \
+  "phase_dockerfile rewrites every node:22-alpine stage to the latest LTS major alias node:24-alpine"
 assert_eq "$(grep -c 'FROM node:22-alpine' "$df")" "0" \
   "phase_dockerfile leaves no stale node:22-alpine stages"
+assert_eq "$(grep -c 'FROM node:24.99.0-alpine' "$df")" "0" \
+  "phase_dockerfile never pins a patch-specific base image"
 
-# --- real-Dockerfile shape (multi-line cache-mount RUN, COPY .yarn): both stages bumped ---
+# --- real-Dockerfile shape (multi-line cache-mount RUN, COPY .yarn) already on the
+# --- latest major alias: byte-for-byte no-op — the floating alias fetches patches ---
 mkdir -p "$dtmp/real"
 cat > "$dtmp/real/Dockerfile" <<'EOF'
 FROM node:24-alpine AS build-base
@@ -83,15 +86,20 @@ COPY --from=yarn-build /app .
 
 CMD ["yarn", "start"]
 EOF
+cp "$dtmp/real/Dockerfile" "$dtmp/real-before"
+real_log="$dtmp/real-log"
 (
   latest_node_lts() { printf '24.99.0\n'; }
   REPO_DIR="$dtmp/real" phase_dockerfile
-) > /dev/null
+) > "$real_log"
 df="$dtmp/real/Dockerfile"
-assert_eq "$(grep -c 'FROM node:24.99.0-alpine' "$df")" "2" \
-  "phase_dockerfile rewrites both node:24-alpine stages in the real Dockerfile shape"
+cmp -s "$dtmp/real-before" "$df"
+assert_status "$?" 0 \
+  "phase_dockerfile on the floating major alias node:24-alpine changes zero bytes"
+assert_eq "$(grep -c 'no-op' "$real_log")" "1" \
+  "phase_dockerfile logs the base-image step as a no-op when the major alias is current"
 
-# --- already correct: byte-for-byte no-op ---
+# --- patch-pinned but current image: normalized back to the floating major alias ---
 mkdir -p "$dtmp/correct"
 cat > "$dtmp/correct/Dockerfile" <<'EOF'
 FROM node:24.99.0-alpine AS build-base
@@ -115,11 +123,8 @@ correct_log="$dtmp/correct-log"
   latest_node_lts() { printf '24.99.0\n'; }
   REPO_DIR="$dtmp/correct" phase_dockerfile
 ) > "$correct_log"
-cmp -s "$dtmp/correct-before" "$dtmp/correct/Dockerfile"
-assert_status "$?" 0 \
-  "phase_dockerfile on an already-correct Dockerfile changes zero bytes"
-assert_eq "$(grep -c 'no-op' "$correct_log")" "1" \
-  "phase_dockerfile logs the base-image step as a no-op on an already-correct Dockerfile"
+assert_eq "$(grep -c 'FROM node:24-alpine' "$dtmp/correct/Dockerfile")" "2" \
+  "phase_dockerfile normalizes a patch-pinned current image back to the floating major alias"
 
 # --- latest_node_lts failure: warn, Dockerfile untouched byte-for-byte ---
 mkdir -p "$dtmp/ltsfail"
