@@ -12,16 +12,16 @@
     "upgrade": "bash scripts/upgrade.sh"
   },
   "dependencies": {
-    "@strapi/plugin-graphql": "5.52.2",
-    "@strapi/plugin-users-permissions": "5.52.2",
-    "@strapi/strapi": "5.52.2",
-    "pg": "^8.21.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-router-dom": "^6.30.4",
+    "@strapi/plugin-graphql": "^5.52.3",
+    "@strapi/plugin-users-permissions": "^5.52.3",
+    "@strapi/strapi": "^5.52.3",
+    "pg": "^8.23.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.6",
     "strapi-plugin-media-prefix": "^1.0.6",
     "strapi-provider-upload-cloudflare": "^4.3.0",
-    "styled-components": "^6.5.2"
+    "styled-components": "^6.5.3"
   },
   "author": {
     "name": "Elle Mundy"
