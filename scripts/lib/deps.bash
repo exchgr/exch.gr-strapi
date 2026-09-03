@@ -46,11 +46,13 @@ reconcile_strapi_react() {
 
 # Reconcile one dependency against its strapi peer range: no-op (with log)
 # when the declared range's major already matches, otherwise `yarn up` to
-# `^<target>.0.0`. Returns 0 iff a bump was issued; skips (missing peer,
-# unparseable peer, undeclared dep) return 1; a FAILED bump dies — a
-# half-reconciled react family must not silently continue to later phases.
+# `^<latest release in the target major>` (floor fallback `^<target>.0.0`
+# when the registry lookup fails). Returns 0 iff a bump was issued; skips
+# (missing peer, unparseable peer, undeclared dep) return 1; a FAILED bump
+# dies — a half-reconciled react family must not silently continue to later
+# phases.
 reconcile_dep() {
-  local dep="$1" peers="$2" peer target current current_major
+  local dep="$1" peers="$2" peer target current current_major latest range
   peer="$(peer_of "$peers" "$dep")"
   if [[ -z "$peer" ]]; then
     log "deps: no $dep peer range found — skipping"
@@ -70,8 +72,28 @@ reconcile_dep() {
     log "deps: $dep '$current' already matches strapi peer range '$peer' — no-op"
     return 1
   fi
-  log "deps: strapi peer range '$peer' -> target major $target ($dep '$current' -> '^${target}.0.0')"
-  run yarn up "$dep@^${target}.0.0" || die "deps: failed to bump $dep to ^${target}.0.0"
+  if latest="$(latest_matching_version "$dep@^$target")" && [[ -n "$latest" ]]; then
+    range="^$latest"
+  else
+    warn "deps: could not resolve latest $dep@^$target — falling back to ^${target}.0.0"
+    range="^${target}.0.0"
+  fi
+  log "deps: strapi peer range '$peer' -> target major $target ($dep '$current' -> '$range')"
+  run yarn up "$dep@$range" || die "deps: failed to bump $dep to $range"
+}
+
+# Registry-fresh newest release matching a semver range (passed as
+# "<dep>@^<major>"), so a reconcile bump pins the newest patch of the
+# peer-accepted major instead of the ^X.0.0 floor. Specs shadow this name
+# or stub yarn via PATH.
+latest_matching_version() {
+  yarn npm info "$1" --fields version --json 2>/dev/null | parse_version_field
+}
+
+# Pure: the "version" field from `yarn npm info --fields version --json`
+# output. Empty when absent.
+parse_version_field() {
+  jq -r 'first(.. | objects | select(.version?) | .version) // empty'
 }
 
 # Pure: the "dep=range" peers block + dep name -> the dep's peer range, empty

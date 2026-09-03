@@ -79,6 +79,43 @@ assert_eq "$(REPO_DIR="$dtmp/declared" declared_range react)" "^18.0.0" \
 assert_eq "$(REPO_DIR="$dtmp/declared" declared_range vue)" "" \
   "declared_range returns empty for an undeclared dep"
 
+# --- parse_version_field (pure): the version field from yarn npm info output ---
+assert_eq "$(printf '%s\n' '{"name":"react-router-dom","version":"6.30.6"}' | parse_version_field)" "6.30.6" \
+  "parse_version_field extracts the version from yarn npm info --fields version --json output"
+assert_eq "$(printf '%s\n' '{"name":"react-router-dom"}' | parse_version_field)" "" \
+  "parse_version_field returns empty when no version field is present"
+
+# --- latest_matching_version (production yarn wiring via PATH stub, in a subshell) ---
+verstub="$(mktemp -d)"
+cat > "$verstub/yarn" <<'EOF'
+#!/usr/bin/env sh
+printf '%s\n' "$*" >> "$0.args"
+printf '%s\n' '{"name":"react-router-dom","version":"6.30.6"}'
+EOF
+chmod +x "$verstub/yarn"
+rc=0
+(
+  PATH="$verstub:$PATH"
+  latest_matching_version 'react-router-dom@^6'
+) > "$verstub/out" || rc=$?
+assert_status "$rc" 0 "latest_matching_version succeeds via the yarn npm info PATH stub"
+assert_eq "$(cat "$verstub/yarn.args")" "npm info react-router-dom@^6 --fields version --json" \
+  "latest_matching_version queries the registry for the newest release matching the range"
+assert_eq "$(cat "$verstub/out")" "6.30.6" \
+  "latest_matching_version prints the latest version matching the range"
+rm -rf "$verstub"
+
+# Per-spec seam stub: the newest release of each peer-accepted major.
+latest_matching_version() {
+  case "$1" in
+    react@^18) printf '18.3.1' ;;
+    react-dom@^18) printf '18.3.1' ;;
+    react@^19) printf '19.2.0' ;;
+    react-router-dom@^6) printf '6.30.6' ;;
+    *) return 1 ;;
+  esac
+}
+
 # --- reconcile_strapi_react: OR-compound peers align the whole react family ---
 mkdir -p "$dtmp/recon-or"
 printf '{"dependencies":{"react":"^17.0.0","react-dom":"^19.2.8","react-router-dom":"^7.18.3"}}\n' > "$dtmp/recon-or/package.json"
@@ -90,8 +127,8 @@ recon_or_calls="$dtmp/recon-or-calls"
   REPO_DIR="$dtmp/recon-or" reconcile_strapi_react
 )
 assert_eq "$(cat "$recon_or_calls")" \
-  $'yarn up react@^18.0.0\nyarn up react-dom@^18.0.0\nyarn up react-router-dom@^6.0.0\nyarn install' \
-  "reconcile_strapi_react on OR-compound peers floats react/react-dom to 18, caps react-router-dom to 6, then installs once"
+  $'yarn up react@^18.3.1\nyarn up react-dom@^18.3.1\nyarn up react-router-dom@^6.30.6\nyarn install' \
+  "reconcile_strapi_react on OR-compound peers floats react/react-dom to the latest 18.x, caps react-router-dom to the latest 6.x, then installs once"
 
 # --- reconcile_strapi_react: peer ^19 + react ^18 -> yarn up react@^19.0.0 + yarn install ---
 mkdir -p "$dtmp/recon-up"
@@ -103,8 +140,27 @@ recon_calls="$dtmp/recon-up-calls"
   fetch_strapi_peer_deps() { printf 'react=^19.0.0\n'; }
   REPO_DIR="$dtmp/recon-up" reconcile_strapi_react
 )
-assert_eq "$(cat "$recon_calls")" $'yarn up react@^19.0.0\nyarn install' \
-  "reconcile_strapi_react on peer ^19 vs react ^18 records yarn up react@^19.0.0 then yarn install"
+assert_eq "$(cat "$recon_calls")" $'yarn up react@^19.2.0\nyarn install' \
+  "reconcile_strapi_react on peer ^19 vs react ^18 records yarn up react@^19.2.0 then yarn install"
+
+# --- reconcile_strapi_react: unresolvable latest -> falls back to the ^major.0.0 floor ---
+mkdir -p "$dtmp/recon-fallback"
+printf '{"dependencies":{"react":"^18.0.0"}}\n' > "$dtmp/recon-fallback/package.json"
+recon_fallback_calls="$dtmp/recon-fallback-calls"
+recon_fallback_err="$dtmp/recon-fallback-err"
+: > "$recon_fallback_calls"
+(
+  run() { printf '%s\n' "$*" >> "$recon_fallback_calls"; }
+  fetch_strapi_peer_deps() { printf 'react=^19.0.0\n'; }
+  latest_matching_version() { return 1; }
+  {
+    REPO_DIR="$dtmp/recon-fallback" reconcile_strapi_react
+  } 2> "$recon_fallback_err"
+)
+assert_eq "$(cat "$recon_fallback_calls")" $'yarn up react@^19.0.0\nyarn install' \
+  "reconcile_strapi_react with an unresolvable latest falls back to the ^major.0.0 floor bump"
+assert_eq "$(grep -c 'could not resolve latest react@^19' "$recon_fallback_err")" "1" \
+  "reconcile_strapi_react warns when falling back to the floor bump"
 
 # --- reconcile_strapi_react: react already at peer major -> no-op ---
 mkdir -p "$dtmp/recon-noop"
@@ -163,7 +219,7 @@ deps_out="$(
   fetch_strapi_peer_deps() { printf 'react=^19.0.0\n'; }
   REPO_DIR="$dtmp" phase_deps
 )"
-assert_eq "$(cat "$dep_calls")" $'yarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn up react@^19.0.0\nyarn install\nyarn up @strapi/strapi@latest\nyarn up qs@latest\nyarn install' \
+assert_eq "$(cat "$dep_calls")" $'yarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn up react@^19.2.0\nyarn install\nyarn up @strapi/strapi@latest\nyarn up qs@latest\nyarn install' \
   "phase_deps records: yarn up *, strapi trio, react reconcile (up + lazy install), deduped+ordered dependabot ups, final yarn install"
 
 # --- phase_deps with gh failure: warn + skip dependabot, keep the rest of the phase ---
