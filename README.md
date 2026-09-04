@@ -3,6 +3,44 @@
 ## What It Is
 exch.gr-strapi is the [strapi](https://strapi.io/) backend portion ofthe blog hosted at https://exch.gr/. It serves as a headless CMS that hosts all the data for articles, tags, collections, redirects, etc. Then, [exch.gr-11ty](https://github.com/exchgr/exch.gr-11ty) pulls the data and generates the website.
 
+## Upgrading
+
+Toolchain prerequisites:
+
+- `brew bundle` installs the CLI tools in the `Brewfile` (everything required by `scripts/upgrade.sh`).
+- node is managed by asdf and pinned in `.tool-versions`.
+- yarn upgrades itself via `yarn set version berry`.
+
+The `upgrade` yarn script (`bash scripts/upgrade.sh`) runs the phases selected by the flags below. A hard-fail preflight aborts the run if a required tool is missing, `gh` is not authenticated, or the worktree is dirty.
+
+Run everything with `yarn run upgrade --all`, or select phases piecemeal to control blast radius — flags combine; running with no flags is a usage error.
+
+| Flag | Phase |
+| --- | --- |
+| `-a`, `--all` | every phase |
+| `-y`, `--yarn` | yarn berry + install |
+| `-n`, `--node` | asdf node LTS pin + engines rewrite |
+| `-d`, `--dependencies` | direct dependency bumps |
+| `-t`, `--transitive` | transitive refresh + dedupe |
+| `-s`, `--strapi-types` | Strapi type regeneration |
+| `-w`, `--workflows` | GitHub Actions action bumps |
+| `-i`, `--docker` | Dockerfile base image bumps |
+| `-r`, `--dry-run` | print planned mutations without applying them; composes with any selection |
+| `-h`, `--help` | show usage |
+
+```
+yarn run upgrade -dt              # deps + transitive only
+yarn run upgrade --all --dry-run  # preview everything, change nothing
+```
+
+Notes:
+
+- `react`, `react-dom`, and `react-router-dom` are auto-reconciled, as part of the `-d` phase, to the latest versions allowed by strapi's peer ranges — never beyond.
+- Dependabot alerts (fetched via `gh` during the `-d` phase) trigger bumps to latest; if the `gh` fetch fails, this step is skipped with a warning — the rest of the run continues.
+- The script never commits; inspect `git diff` before committing.
+
+Development: `bash scripts/all.spec.bash` runs the script's test suite.
+
 More from the Strapi default README:
 
 # 🚀 Getting started with Strapi
