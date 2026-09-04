@@ -11,27 +11,31 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/helpers.bash"
 
 # selector: deps
 phase_deps() {
-  # The react-family reconcile runs FIRST — before the blanket float — so the
-  # family's declared ranges are already pinned to the peer-accepted major when
-  # `yarn up '*'` runs. A range-constrained blanket float can then never cross
-  # the family's majors, which kills the float-then-correct dance (and its
-  # YN0060 non-overlapping-range warnings) and removes the blast radius of the
-  # reconcile dying mid-way: the erroneous major bumps no longer exist to be
-  # cleaned up, because they never happen.
-  #
-  # No drift between the pre-float peer lookup and the trio bump below: both
-  # query `@latest` from the registry (fetch_strapi_peer_deps reads
-  # @strapi/strapi@latest/@strapi/admin@latest; the trio bump targets
-  # @latest too), and the two steps run back-to-back within one phase. Strapi
-  # publishing a new latest between them would require a registry change
-  # mid-phase; even then the next deps run re-reconciles against the new peer
-  # ranges, so the family never lands out of range permanently. The reconcile
-  # target therefore always derives from strapi's peer range, never from the
-  # locally installed strapi version — coherent with reconcile_strapi_react's
-  # registry-fresh design.
-  reconcile_strapi_react || return $?
-  run yarn up '*'
+  local peers exclusions up_args=() dep
+  # Family ownership, not ordering: the react family is bumped EXCLUSIVELY by
+  # reconcile_strapi_react (each member to the latest release of its
+  # strapi-peer-accepted major). The blanket float therefore never sees the
+  # family: instead of `yarn up '*'`, the declared deps are enumerated
+  # explicitly and the family names — derived from the same peer-deps seam
+  # the reconcile reads — are dropped from the enumeration. (A bare
+  # `yarn up '*'` rewrites the family's ranges to latest no matter what they
+  # say: yarn up's pattern selects packages, it does not cap their range, so
+  # no amount of pre-pinning could keep the family in range.) The blanket
+  # bump and the reconcile are independent steps — correct in any order:
+  # with no peer data the exclusion list is empty and the blanket covers the
+  # whole manifest, and only the reconcile ever moves the family.
+  if ! peers="$(fetch_strapi_peer_deps)"; then
+    peers=""
+  fi
+  exclusions="$(react_family_names "$peers")"
+  while IFS= read -r dep; do
+    up_args+=("$dep")
+  done < <(blanket_up_args "$(declared_deps)" "$exclusions")
+  if (( ${#up_args[@]} )); then
+    run yarn up "${up_args[@]}"
+  fi
   run yarn up '@strapi/strapi@latest' '@strapi/plugin-graphql@latest' '@strapi/plugin-users-permissions@latest'
+  reconcile_strapi_react || return $?
   dependabot_bumps
   run yarn install
   log "deps: phase complete"
@@ -143,6 +147,44 @@ peer_of() {
 # undeclared. Reads a file, but is side-effect-free.
 declared_range() {
   jq -r ".dependencies.\"$1\" // empty" "$REPO_DIR/package.json" 2>/dev/null
+}
+
+# The declared top-level dependency names from the repo's package.json, one
+# per line. Reads a file, but is side-effect-free; specs set REPO_DIR.
+declared_deps() {
+  jq -r '.dependencies | keys[]' "$REPO_DIR/package.json" 2>/dev/null
+}
+
+# Pure: the dep names managed by reconcile — the "dep" half of each
+# "dep=range" line in the peers block. Empty peers -> no names. Membership
+# here is what keeps the blanket float from ever touching the family,
+# regardless of whether each range parses.
+react_family_names() {
+  local line
+  while IFS= read -r line; do
+    [[ "$line" == *=* ]] && printf '%s\n' "${line%%=*}"
+  done <<<"$1"
+}
+
+# Pure: the blanket-float arguments — every newline-separated dep name in $1
+# that is not an exact member of the newline-separated exclusion set $2, each
+# as `<dep>@latest`. Exact-line matching keeps "react" from excluding
+# "react-dom". Empty exclusions -> every declared dep; empty declared ->
+# nothing (no blanket run).
+blanket_up_args() {
+  local declared="$1" exclusions="$2" dep member skip
+  while IFS= read -r dep; do
+    [[ -n "$dep" ]] || continue
+    skip=0
+    while IFS= read -r member; do
+      [[ -n "$member" ]] || continue
+      if [[ "$dep" == "$member" ]]; then
+        skip=1
+        break
+      fi
+    done <<<"$exclusions"
+    (( skip )) || printf '%s@latest\n' "$dep"
+  done <<<"$declared"
 }
 
 # Registry-fresh metadata after the trio upgrade. Every strapi package

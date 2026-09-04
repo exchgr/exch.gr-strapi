@@ -326,6 +326,30 @@ depbumps_calls="$dtmp/depbumps-calls"
 assert_eq "$(cat "$depbumps_calls")" $'yarn set resolution qs@npm:* npm:6.15.3\nyarn up react@latest' \
   "dependabot_bumps bumps declared packages with yarn up and transitive-only packages with yarn set resolution (sorted alert order)"
 
+# --- react_family_names (pure): the names reconcile owns, from the peers block ---
+assert_eq "$(react_family_names $'react=^17.0.0 || ^18.0.0\nreact-dom=^18.0.0\nreact-router-dom=^6.30.3')" \
+  $'react\nreact-dom\nreact-router-dom' \
+  "react_family_names extracts every dep name from the dep=range peers block"
+assert_eq "$(react_family_names '')" "" "react_family_names of an empty peers block names nothing"
+assert_eq "$(react_family_names 'garbage line')" "" \
+  "react_family_names skips lines without a dep=range shape"
+
+# --- blanket_up_args (pure): declared deps minus the family, as <dep>@latest ---
+assert_eq "$(blanket_up_args $'@strapi/strapi\nreact\npg' 'react')" $'@strapi/strapi@latest\npg@latest' \
+  "blanket_up_args drops exactly the excluded dep and adds @latest to the rest"
+assert_eq "$(blanket_up_args $'react\nreact-dom' 'react')" $'react-dom@latest' \
+  "blanket_up_args matches exclusions exactly (react does not exclude react-dom)"
+assert_eq "$(blanket_up_args $'pg\nstyled-components' '')" $'pg@latest\nstyled-components@latest' \
+  "blanket_up_args with an empty exclusion list covers every declared dep"
+assert_eq "$(blanket_up_args 'react' $'react\nreact-dom')" "" \
+  "blanket_up_args with every dep excluded names nothing (no blanket run)"
+
+# --- declared_deps: the declared top-level dependency names ---
+mkdir -p "$dtmp/declared-deps"
+printf '{"dependencies":{"react":"^18.0.0","@strapi/strapi":"^5.0.0"}}\n' > "$dtmp/declared-deps/package.json"
+assert_eq "$(REPO_DIR="$dtmp/declared-deps" declared_deps)" $'@strapi/strapi\nreact' \
+  "declared_deps lists the manifest's dependency names"
+
 # --- phase_deps happy path (recorder run + fixture alerts via the seam, in a subshell) ---
 # Fixture: @strapi/strapi duplicated, qs open, nanoid dismissed. dependabot_pkgs
 # (reused from helpers.bash) must dedupe to the sorted open set.
@@ -354,15 +378,15 @@ deps_out="$(
   latest_version_of() { printf '6.15.3'; }
   REPO_DIR="$dtmp" phase_deps
 )"
-assert_eq "$(cat "$dep_calls")" $'yarn up react@^19.2.0\nyarn install\nyarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn up @strapi/strapi@latest\nyarn set resolution qs@npm:* npm:6.15.3\nyarn install' \
-  "phase_deps reconciles the react family BEFORE the blanket float: reconcile up + lazy install, then yarn up * (capped by the pinned ranges), strapi trio, deduped+ordered dependabot ups (declared -> yarn up, transitive-only -> set resolution), final yarn install"
+assert_eq "$(cat "$dep_calls")" $'yarn up @strapi/strapi@latest\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn up react@^19.2.0\nyarn install\nyarn up @strapi/strapi@latest\nyarn set resolution qs@npm:* npm:6.15.3\nyarn install' \
+  "phase_deps excludes the react family from the blanket float (react is never offered to yarn up *, only to the reconcile), runs the strapi trio, reconcile up + lazy install, deduped+ordered dependabot ups (declared -> yarn up, transitive-only -> set resolution), final yarn install"
 
-# --- phase_deps ordering: family already pinned -> the blanket float cannot cross majors ---
-# The reconcile is a no-op (every dep already sits at its peer major), so the
-# recorded sequence starts directly at `yarn up *` — and the fixture's declared
-# react range is never rewritten, which is exactly what caps the blanket float
-# inside ^18: the range in package.json constrains `yarn up '*'`, so the family
-# can never leave its peer major even when the reconcile had nothing to do.
+# --- phase_deps exclusion: the family is owned by the reconcile, in any order ---
+# The blanket float never sees the react family at all, so no ordering between
+# the blanket bump and the reconcile matters: react's declared range is never
+# rewritten by the blanket, whether or not the reconcile had anything to do.
+# With react the ONLY declared dep the blanket enumeration is empty (no yarn up
+# at all); the trio and the final install still run.
 mkdir -p "$dtmp/pinned"
 printf '{"dependencies":{"react":"^18.2.1"}}\n' > "$dtmp/pinned/package.json"
 pinned_calls="$dtmp/pinned-calls"
@@ -373,10 +397,54 @@ pinned_calls="$dtmp/pinned-calls"
   fetch_strapi_peer_deps() { printf 'react=^18.0.0\n'; }
   REPO_DIR="$dtmp/pinned" phase_deps
 )
-assert_eq "$(cat "$pinned_calls")" $'yarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
-  "phase_deps with the react family already pinned records no reconcile ups before the blanket yarn up *"
+assert_eq "$(cat "$pinned_calls")" $'yarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
+  "phase_deps with react the only declared dep records no blanket up at all (family excluded, reconcile is a no-op), just the trio and install"
 assert_eq "$(REPO_DIR="$dtmp/pinned" declared_range react)" "^18.2.1" \
-  "phase_deps with the react family already pinned never rewrites the declared react range (the range caps the blanket float)"
+  "phase_deps never rewrites the declared react range with the blanket float (the family is excluded from it, ordering-independent)"
+
+# --- phase_deps exclusion: an unparseable family peer range still excludes the family ---
+# Family membership comes from the peers block's NAMES, not from whether each
+# range parses: the family is owned by the reconcile whatever the reconcile
+# decides (including its skip path), so react is excluded from the blanket
+# even with a garbage peer range, while pg still floats.
+mkdir -p "$dtmp/badpeer"
+printf '{"dependencies":{"react":"^18.2.1","pg":"^8.0.0"}}\n' > "$dtmp/badpeer/package.json"
+badpeer_calls="$dtmp/badpeer-calls"
+badpeer_err="$dtmp/badpeer-err"
+: > "$badpeer_calls"
+(
+  run() { printf '%s\n' "$*" >> "$badpeer_calls"; }
+  fetch_dependabot_alerts() { printf '[]\n'; }
+  fetch_strapi_peer_deps() { printf 'react=banana\n'; }
+  {
+    REPO_DIR="$dtmp/badpeer" phase_deps
+  } 2> "$badpeer_err"
+)
+assert_eq "$(cat "$badpeer_calls")" $'yarn up pg@latest\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
+  "phase_deps excludes react from the blanket float even with an unparseable peer range (pg still floats), and the reconcile skips react with a warn"
+assert_contains "$(cat "$badpeer_err")" "unparseable react peer range" \
+  "phase_deps surfaces the reconcile's unparseable-peer-range warn for the excluded family member"
+
+# --- phase_deps exclusion: no peer data -> the blanket covers every declared dep ---
+# With the peer-deps seam unavailable the exclusion list is empty, so the
+# blanket enumeration includes the whole manifest (including react); the
+# reconcile logs its skip. Accepted edge: the family only ever moves back in
+# range via the reconcile, which is exactly what a later deps run does.
+mkdir -p "$dtmp/nopeers"
+printf '{"dependencies":{"react":"^18.2.1","@strapi/strapi":"^5.0.0"}}\n' > "$dtmp/nopeers/package.json"
+nopeers_calls="$dtmp/nopeers-calls"
+nopeers_log="$dtmp/nopeers-log"
+: > "$nopeers_calls"
+(
+  run() { printf '%s\n' "$*" >> "$nopeers_calls"; }
+  fetch_dependabot_alerts() { printf '[]\n'; }
+  fetch_strapi_peer_deps() { return 1; }
+  REPO_DIR="$dtmp/nopeers" phase_deps
+) > "$nopeers_log"
+assert_eq "$(cat "$nopeers_calls")" $'yarn up @strapi/strapi@latest react@latest\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
+  "phase_deps with no peer data records a blanket up covering every declared dep (empty exclusion list) and skips the reconcile"
+assert_eq "$(grep -c 'no react-family peer ranges found — skipping reconcile' "$nopeers_log")" "1" \
+  "phase_deps with no peer data logs the reconcile skip"
 
 # --- phase_deps with gh failure: warn + skip dependabot, keep the rest of the phase ---
 gh_fail_calls="$dtmp/gh-fail-calls"
@@ -390,8 +458,8 @@ gh_fail_err="$dtmp/gh-fail-err"
     REPO_DIR="$dtmp" phase_deps
   } 2> "$gh_fail_err"
 )
-assert_eq "$(cat "$gh_fail_calls")" $'yarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
-  "phase_deps on gh failure still records yarn up *, strapi trio, and yarn install (no dependabot ups)"
+assert_eq "$(cat "$gh_fail_calls")" $'yarn up @strapi/strapi@latest\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
+  "phase_deps on gh failure still records the blanket up (react excluded), strapi trio, and yarn install (no dependabot ups)"
 assert_eq "$(grep -c 'skipping security bumps' "$gh_fail_err")" "1" \
   "phase_deps on gh failure warns about skipping the security bumps"
 
@@ -404,7 +472,7 @@ empty_calls="$dtmp/empty-calls"
   fetch_strapi_peer_deps() { printf 'react=^18.0.0\n'; }
   REPO_DIR="$dtmp" phase_deps
 )
-assert_eq "$(cat "$empty_calls")" $'yarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
+assert_eq "$(cat "$empty_calls")" $'yarn up @strapi/strapi@latest\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
   "phase_deps with zero open alerts records no dependabot ups and still ends with yarn install"
 
 # --- phase_transitive happy path (recorder run, in a subshell) ---
