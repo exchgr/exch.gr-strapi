@@ -49,6 +49,25 @@ parse_args --dry-run -y
 assert_eq "$DRY_RUN" "1" "parse_args --dry-run sets DRY_RUN"
 assert_eq "$WANT_YARN" "1" "parse_args --dry-run -y still selects yarn"
 
+# --- combined short forms: -sniw selects exactly node, types, workflows, docker ---
+reset_selection
+parse_args -sniw
+assert_eq "$WANT_NODE" "1" "parse_args -sniw selects node"
+assert_eq "$WANT_TYPES" "1" "parse_args -sniw selects types"
+assert_eq "$WANT_WORKFLOWS" "1" "parse_args -sniw selects workflows"
+assert_eq "$WANT_DOCKERFILE" "1" "parse_args -sniw selects docker"
+
+# --- --help long form: usage to stdout, exit 0 ---
+rc=0
+help_out="$( { parse_args --help; } )" || rc=$?
+assert_status "$rc" 0 "parse_args --help exits 0"
+assert_contains "$help_out" "Usage:" "parse_args --help prints usage to stdout"
+
+# --- long-form selection ---
+reset_selection
+parse_args --workflows
+assert_eq "$WANT_WORKFLOWS" "1" "parse_args --workflows selects workflows"
+
 # --- no selection: usage on stderr, exit 2 ---
 rc=0
 err="$( { parse_args 2>&1 1>/dev/null; } )" || rc=$?
@@ -78,10 +97,4 @@ for flag in --all --yarn --node --dependencies --transitive --strapi-types --wor
 done
 
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
-  if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-  fi
-  exit 0
-fi
+finish_spec

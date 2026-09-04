@@ -38,8 +38,8 @@ phase_summary() {
     ran="${ran# }"
   fi
   local yarn_version node_version
-  yarn_version="$(jq -r '.packageManager // empty' "$REPO_DIR/package.json" 2>/dev/null)"
-  node_version="$(sed -n 's/^nodejs //p' "$REPO_DIR/.tool-versions" 2>/dev/null | head -n1)"
+  yarn_version="$(current_yarn_version)"
+  node_version="$(current_node_pin)"
   log "summary: ran [$ran]"
   log "summary: resolved yarn=${yarn_version:-unknown} node=${node_version:-unset}"
   log "summary: inspect 'git diff' before committing"

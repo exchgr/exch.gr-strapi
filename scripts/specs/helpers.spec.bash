@@ -14,25 +14,11 @@ IFS=$' \t\n'
 assert_eq "$(semver_major "24.20.0")" "24" "semver_major 24.20.0 -> 24"
 assert_eq "$(semver_major "v4.18.0")" "4" "semver_major v4.18.0 -> 4"
 
-# --- semver_gte ---
-rc=0; semver_gte "4.18.0" "4.9.0" || rc=$?
-assert_status "$rc" 0 "semver_gte 4.18.0 >= 4.9.0 -> 0"
-rc=0; semver_gte "3.6.0" "4.0.0" || rc=$?
-assert_status "$rc" 1 "semver_gte 3.6.0 >= 4.0.0 -> 1"
-rc=0; semver_gte "4.18.0" "4.18.0" || rc=$?
-assert_status "$rc" 0 "semver_gte 4.18.0 >= 4.18.0 -> 0"
-
-# --- is_lts_entry ---
-rc=0; is_lts_entry '{"lts":"Jod"}' || rc=$?
-assert_status "$rc" 0 "is_lts_entry lts string -> 0"
-rc=0; is_lts_entry '{"lts":false}' || rc=$?
-assert_status "$rc" 1 "is_lts_entry lts false -> 1"
-
 # --- highest_vtag ---
 actual="$(printf 'v9/v7\nv6\nv10\n' | highest_vtag)"
 assert_eq "$actual" "v10" "highest_vtag picks v10"
 rc=0
-actual="$(printf '' | highest_vtag)"
+actual="$(printf '' | highest_vtag)" || rc=$?
 assert_eq "$actual" "" "highest_vtag empty stdin -> empty"
 assert_status "$rc" 0 "highest_vtag empty stdin -> status 0"
 
@@ -54,10 +40,4 @@ rc=0; action_tag_newer "v7" "v7" || rc=$?
 assert_status "$rc" 1 "action_tag_newer v7 v7 -> 1 (equal major)"
 
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
-  if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-  fi
-  exit 0
-fi
+finish_spec

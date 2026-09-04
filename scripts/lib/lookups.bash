@@ -1,6 +1,7 @@
-# scripts/lib/lookups.bash — fetch-seam lookups: network access is confined to
-# the latest_* wrappers; the parse_* functions are pure (JSON/text on stdin) and
-# are what the spec exercises via fixtures.
+# scripts/lib/lookups.bash — lookups: network access is confined to the
+# latest_* wrappers; the current_* wrappers read local files (side-effect-free);
+# the parse_* functions are pure (JSON/text on stdin). The parse_* and current_*
+# functions are what the spec exercises via fixtures.
 # Dependencies: common.bash, helpers.bash.
 # shellcheck source=scripts/lib/common.bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.bash"
@@ -23,6 +24,17 @@ parse_yarn_version() {
 
 latest_yarn_version() {
   curl -fsSL https://registry.npmjs.org/yarn/latest | parse_yarn_version
+}
+
+# The yarn version currently recorded by a prior phase — empty when
+# package.json has no packageManager entry.
+current_yarn_version() {
+  jq -r '.packageManager // empty' "$REPO_DIR/package.json" 2>/dev/null
+}
+
+# The node pin currently recorded in .tool-versions — empty when unset.
+current_node_pin() {
+  sed -n 's/^nodejs //p' "$REPO_DIR/.tool-versions" 2>/dev/null | head -n1
 }
 
 parse_uses_line() {

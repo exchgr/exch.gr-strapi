@@ -4,7 +4,7 @@
 # ONLY warn-and-continue execution: a failed generation warns and returns 0 so
 # later phases still run (unlike the preflight/deps hard-fail contract).
 # selector: types
-# Dependency: common.bash.
+# Dependencies: common.bash.
 # shellcheck source=scripts/lib/common.bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.bash"
 

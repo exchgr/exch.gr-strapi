@@ -37,9 +37,21 @@ assert_contains() {
   fi
 }
 
-# Bottom guard: when run standalone, print totals and exit on FAIL.
-# When sourced by the combined runner (all.spec.bash), do nothing — the
-# runner owns the single combined totals print.
+# Bottom guard shared by every spec: a standalone run prints totals and exits
+# on FAIL; a sourced run (the combined runner) defers — the runner owns the
+# single combined totals print. BASH_SOURCE[1] is the spec that called this,
+# which equals $0 exactly when that spec is the executing script.
+finish_spec() {
+  if [[ "${BASH_SOURCE[1]}" == "$0" ]]; then
+    printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
+    if [[ "$FAIL" -gt 0 ]]; then
+      exit 1
+    fi
+    exit 0
+  fi
+}
+
+# Bottom guard for test-utils itself (standalone run of the library only).
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
   if [[ "$FAIL" -gt 0 ]]; then

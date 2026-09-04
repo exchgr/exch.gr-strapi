@@ -10,6 +10,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # --- logging -------------------------------------------------------------------
+# Prefix convention: log lines start with "<phase>: " (e.g. "node: ...",
+# "deps: ..."); warn prints the bare message to stderr; die prefixes its
+# message with "upgrade.sh:". No literal "[upgrade]" prefix exists anywhere.
 
 log() {
   local IFS=' '
@@ -29,13 +32,16 @@ die() {
 
 # --- execution wrappers (dry-run aware) ------------------------------------------
 
+# Both wrappers enforce the documented blast-radius contract: a failed command
+# or edit aborts the whole run instead of letting later phases mutate on a
+# broken base. Dry-run paths never execute anything and cannot fail.
 run() {
   local IFS=' '
   if (( DRY_RUN )); then
     log "[dry-run] $*"
   else
     log "+ $*"
-    "$@"
+    "$@" || die "command failed: $*"
   fi
 }
 
@@ -46,7 +52,7 @@ apply_edit() {
   if (( DRY_RUN )); then
     log "[dry-run] edit: $description"
   else
-    "$@"
+    "$@" || die "edit failed: $description"
   fi
 }
 
@@ -56,22 +62,4 @@ apply_edit() {
 replace_all_in_file() {
   local file="$1" from="$2" to="$3"
   sed -i '' "s#$from#$to#g" "$file"
-}
-
-# Insert $3 as its own line immediately after line $2 of $1 (1-based).
-# BSD sed needs `a\` followed by a literal newline before the inserted text.
-insert_line_after() {
-  local file="$1" n="$2" text="$3"
-  (( n >= 1 )) || return 1
-  sed -i '' "$n a\\
-$text" "$file"
-}
-
-# Insert $3 as its own line immediately before line $2 of $1 (1-based).
-# BSD sed needs `i\` followed by a literal newline before the inserted text.
-insert_line_before() {
-  local file="$1" n="$2" text="$3"
-  (( n >= 1 )) || return 1
-  sed -i '' "$n i\\
-$text" "$file"
 }

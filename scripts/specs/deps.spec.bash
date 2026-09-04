@@ -13,6 +13,7 @@ source "$SPEC_DIR/../lib/deps.bash"
 IFS=$' \t\n'
 
 dtmp="$(mktemp -d)"
+trap 'rm -rf "$dtmp"' EXIT
 
 # --- fetch_dependabot_alerts (production gh wiring via PATH stub, in a subshell) ---
 ghstub="$(mktemp -d)"
@@ -105,17 +106,6 @@ assert_eq "$(cat "$verstub/out")" "6.30.6" \
   "latest_matching_version prints the latest version matching the range"
 rm -rf "$verstub"
 
-# Per-spec seam stub: the newest release of each peer-accepted major.
-latest_matching_version() {
-  case "$1" in
-    react@^18) printf '18.3.1' ;;
-    react-dom@^18) printf '18.3.1' ;;
-    react@^19) printf '19.2.0' ;;
-    react-router-dom@^6) printf '6.30.6' ;;
-    *) return 1 ;;
-  esac
-}
-
 # --- reconcile_strapi_react: OR-compound peers align the whole react family ---
 mkdir -p "$dtmp/recon-or"
 printf '{"dependencies":{"react":"^17.0.0","react-dom":"^19.2.8","react-router-dom":"^7.18.3"}}\n' > "$dtmp/recon-or/package.json"
@@ -124,6 +114,17 @@ recon_or_calls="$dtmp/recon-or-calls"
 (
   run() { printf '%s\n' "$*" >> "$recon_or_calls"; }
   fetch_strapi_peer_deps() { printf 'react=^17.0.0 || ^18.0.0\nreact-dom=^17.0.0 || ^18.0.0\nreact-router-dom=^6.30.3\n'; }
+  # Seam stub, subshell-scoped per the header contract: newest release of
+  # each peer-accepted major.
+  latest_matching_version() {
+    case "$1" in
+      react@^18) printf '18.3.1' ;;
+      react-dom@^18) printf '18.3.1' ;;
+      react@^19) printf '19.2.0' ;;
+      react-router-dom@^6) printf '6.30.6' ;;
+      *) return 1 ;;
+    esac
+  }
   REPO_DIR="$dtmp/recon-or" reconcile_strapi_react
 )
 assert_eq "$(cat "$recon_or_calls")" \
@@ -138,6 +139,16 @@ recon_calls="$dtmp/recon-up-calls"
 (
   run() { printf '%s\n' "$*" >> "$recon_calls"; }
   fetch_strapi_peer_deps() { printf 'react=^19.0.0\n'; }
+  # Same seam stub, subshell-scoped per the header contract.
+  latest_matching_version() {
+    case "$1" in
+      react@^18) printf '18.3.1' ;;
+      react-dom@^18) printf '18.3.1' ;;
+      react@^19) printf '19.2.0' ;;
+      react-router-dom@^6) printf '6.30.6' ;;
+      *) return 1 ;;
+    esac
+  }
   REPO_DIR="$dtmp/recon-up" reconcile_strapi_react
 )
 assert_eq "$(cat "$recon_calls")" $'yarn up react@^19.2.0\nyarn install' \
@@ -203,6 +214,38 @@ assert_eq "$(cat "$recon_bad_calls")" "" \
 assert_eq "$(grep -c 'unparseable react peer range' "$recon_bad_err")" "1" \
   "reconcile_strapi_react with an unparseable peer range warns"
 
+# --- reconcile_dep hard-fail contract: a failing bump dies, install never runs ---
+mkdir -p "$dtmp/bumpfail"
+printf '{"dependencies":{"react":"^18.0.0"}}\n' > "$dtmp/bumpfail/package.json"
+bumpfail_calls="$dtmp/bumpfail-calls"
+bumpfail_err="$dtmp/bumpfail-err"
+: > "$bumpfail_calls"
+bf_rc=0
+(
+  run() {
+    printf '%s\n' "$*" >> "$bumpfail_calls"
+    [[ "$*" == 'yarn up react@^19.2.0' ]] && return 1
+    return 0
+  }
+  fetch_strapi_peer_deps() { printf 'react=^19.0.0\n'; }
+  # Same seam stub, subshell-scoped per the header contract.
+  latest_matching_version() {
+    case "$1" in
+      react@^18) printf '18.3.1' ;;
+      react@^19) printf '19.2.0' ;;
+      *) return 1 ;;
+    esac
+  }
+  {
+    REPO_DIR="$dtmp/bumpfail" reconcile_strapi_react
+  } 2> "$bumpfail_err"
+) || bf_rc=$?
+assert_status "$bf_rc" 1 "reconcile_dep dies when the yarn up bump fails"
+assert_contains "$(cat "$bumpfail_err")" "deps: failed to bump react to ^19.2.0" \
+  "reconcile_dep names the failed dep and range"
+assert_eq "$(cat "$bumpfail_calls")" "yarn up react@^19.2.0" \
+  "reconcile_dep records nothing after the failed bump (no lazy yarn install)"
+
 # --- phase_deps happy path (recorder run + fixture alerts via the seam, in a subshell) ---
 # Fixture: @strapi/strapi duplicated, qs open, nanoid dismissed. dependabot_pkgs
 # (reused from helpers.bash) must dedupe to the sorted open set.
@@ -217,6 +260,14 @@ deps_out="$(
   run() { printf '%s\n' "$*" >> "$dep_calls"; }
   fetch_dependabot_alerts() { printf '%s\n' "$dep_fixture"; }
   fetch_strapi_peer_deps() { printf 'react=^19.0.0\n'; }
+  # Same seam stub, subshell-scoped per the header contract.
+  latest_matching_version() {
+    case "$1" in
+      react@^18) printf '18.3.1' ;;
+      react@^19) printf '19.2.0' ;;
+      *) return 1 ;;
+    esac
+  }
   REPO_DIR="$dtmp" phase_deps
 )"
 assert_eq "$(cat "$dep_calls")" $'yarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn up react@^19.2.0\nyarn install\nyarn up @strapi/strapi@latest\nyarn up qs@latest\nyarn install' \
@@ -278,13 +329,5 @@ assert_status "$tf_rc" 1 \
 assert_eq "$(cat "$tf_calls")" "yarn up -R *" \
   "phase_transitive records nothing after a failing wildcard -R (no per-package -R, no dedupe, no install)"
 
-rm -rf "$dtmp"
-
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
-  if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-  fi
-  exit 0
-fi
+finish_spec

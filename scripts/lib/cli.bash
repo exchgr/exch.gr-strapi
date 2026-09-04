@@ -61,26 +61,49 @@ map_long_option() {
   esac
 }
 
-parse_args() {
-  WANT_ALL=0 WANT_YARN=0 WANT_NODE=0 WANT_DEPS=0 WANT_TRANSITIVE=0
-  WANT_TYPES=0 WANT_WORKFLOWS=0 WANT_DOCKERFILE=0
-  OPTIND=1
-  local -a normalized=()
+# The ONE place argv is reshaped for getopts: every `--long` becomes its
+# single letter via map_long_option (unknown long flags are usage errors);
+# short flags and positionals pass through untouched. Writes the
+# NORMALIZED_ARGS global for the immediately following parse_args pass — a
+# stdout round-trip would strand usage_error's exit inside a subshell.
+NORMALIZED_ARGS=()
+
+normalize_args() {
+  NORMALIZED_ARGS=()
   local arg short
   while (( $# )); do
     arg="$1"
     shift
     if [[ "$arg" == --* ]]; then
       short="$(map_long_option "$arg")" || usage_error "unknown option: $arg"
-      normalized+=("-$short")
+      NORMALIZED_ARGS+=("-$short")
     else
-      normalized+=("$arg")
+      NORMALIZED_ARGS+=("$arg")
     fi
   done
+}
 
+# Post-parse guards, shared by parse_args: a leftover positional operand is a
+# usage error, and so is a parse that selected no phase (choose the blast
+# radius).
+validate_selection() {
+  local -a normalized=("$@")
+  if (( OPTIND <= ${#normalized[@]} )); then
+    usage_error "unexpected argument: ${normalized[OPTIND - 1]}"
+  fi
+  if (( WANT_ALL + WANT_YARN + WANT_NODE + WANT_DEPS + WANT_TRANSITIVE + WANT_TYPES + WANT_WORKFLOWS + WANT_DOCKERFILE == 0 )); then
+    usage_error "no phases selected (use --all for everything)"
+  fi
+}
+
+parse_args() {
+  WANT_ALL=0 WANT_YARN=0 WANT_NODE=0 WANT_DEPS=0 WANT_TRANSITIVE=0
+  WANT_TYPES=0 WANT_WORKFLOWS=0 WANT_DOCKERFILE=0
+  OPTIND=1
+  normalize_args "$@"
   local optspec=":ayndtswirh" opt
   # ${arr[@]+...} keeps bash 3.2 happy about empty arrays under set -u.
-  while getopts "$optspec" opt ${normalized[@]+"${normalized[@]}"}; do
+  while getopts "$optspec" opt ${NORMALIZED_ARGS[@]+"${NORMALIZED_ARGS[@]}"}; do
     case "$opt" in
       a) WANT_ALL=1 ;;
       y) WANT_YARN=1 ;;
@@ -98,10 +121,5 @@ parse_args() {
       \?) usage_error "unknown option: -${OPTARG}" ;;
     esac
   done
-  if (( OPTIND <= ${#normalized[@]} )); then
-    usage_error "unexpected argument: ${normalized[OPTIND - 1]}"
-  fi
-  if (( WANT_ALL + WANT_YARN + WANT_NODE + WANT_DEPS + WANT_TRANSITIVE + WANT_TYPES + WANT_WORKFLOWS + WANT_DOCKERFILE == 0 )); then
-    usage_error "no phases selected (use --all for everything)"
-  fi
+  validate_selection ${NORMALIZED_ARGS[@]+"${NORMALIZED_ARGS[@]}"}
 }

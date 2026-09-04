@@ -11,11 +11,18 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lookups.bash"
 
 phase_node() {
   local lts_full lts_major
-  lts_full="$(latest_node_lts)"
+  # The LTS lookup gates every mutation below (asdf install/set, the
+  # .tool-versions pin, the engines rewrite), so it is a HARD lookup: proceeding
+  # with an empty version would corrupt the pin file and engines. A failed or
+  # empty lookup dies the phase (dispatch contract — node is a mutation phase),
+  # unlike the soft warn-and-skip lookup in docker.bash.
+  if ! lts_full="$(latest_node_lts)" || [[ -z "$lts_full" ]]; then
+    die "node: could not resolve the latest node LTS"
+  fi
   lts_major="$(semver_major "$lts_full")"
   log "node: latest LTS $lts_full (major $lts_major)"
   local current
-  current="$(grep '^nodejs ' "$REPO_DIR/.tool-versions" 2>/dev/null | awk '{ print $2 }' | head -n1)"
+  current="$(current_node_pin)"
   if [[ -n "$current" ]]; then
     log "node: $current -> $lts_full"
   else
@@ -40,14 +47,14 @@ pin_tool_versions_node() {
     log "node: .tool-versions already pins $version"
   else
     apply_edit "pin nodejs $version in .tool-versions" __pin_tool_versions "$toolfile" "$version"
-    log "node: .tool-versions edit was needed (pinned $version)"
+    (( DRY_RUN )) || log "node: .tool-versions edit was needed (pinned $version)"
   fi
 }
 
 __pin_tool_versions() {
   local toolfile="$1" version="$2"
   if grep -q '^nodejs ' "$toolfile" 2>/dev/null; then
-    sed -i.bak "s/^nodejs .*/nodejs $version/" "$toolfile" && rm -f "$toolfile.bak"
+    replace_all_in_file "$toolfile" '^nodejs .*' "nodejs $version"
   else
     printf 'nodejs %s\n' "$version" >> "$toolfile"
   fi
@@ -67,7 +74,7 @@ rewrite_engines() {
     return 0
   fi
   apply_edit "set engines.node to ^$major.0.0 and drop engines.npm" __rewrite_engines "$pkg" "$major"
-  log "node: engines rewritten (node ^$major.0.0, npm pin dropped)"
+  (( DRY_RUN )) || log "node: engines rewritten (node ^$major.0.0, npm pin dropped)"
 }
 
 __rewrite_engines() {

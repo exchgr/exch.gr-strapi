@@ -14,6 +14,21 @@ source "$SPEC_DIR/../lib/workflows.bash"
 IFS=$' \t\n'
 
 wtmp="$(mktemp -d)"
+trap 'rm -rf "$wtmp"' EXIT
+
+# --- collect_workflow_pins (pure text-in/text-out: uses: lines only, deduped) ---
+mkdir -p "$wtmp/pins"
+cat > "$wtmp/pins/wf.yml" <<'EOF'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+      - uses: foo/bar@v1
+EOF
+assert_eq "$(collect_workflow_pins "$wtmp/pins/wf.yml")" $'actions/checkout v7\nfoo/bar v1' \
+  "collect_workflow_pins yields deduped owner/repo ref pairs and ignores runs-on: lines"
 
 # --- happy path: both checkout pins bumped, flyctl kept, runs-on untouched ---
 mkdir -p "$wtmp/happy/.github/workflows"
@@ -102,13 +117,29 @@ no_dir_log="$wtmp/nodir-log"
 assert_eq "$(grep -c 'no .github/workflows directory — skipping' "$no_dir_log")" "1" \
   "phase_workflows skips when .github/workflows is missing"
 
-rm -rf "$wtmp"
+# --- dry-run: the planned edit is printed, never the completed bump line ---
+mkdir -p "$wtmp/dryrun/.github/workflows"
+cat > "$wtmp/dryrun/.github/workflows/ci.yml" <<'EOF'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+EOF
+dryrun_log="$wtmp/dryrun-log"
+(
+  latest_tag_for_repo() { printf 'v8\n'; }
+  DRY_RUN=1
+  REPO_DIR="$wtmp/dryrun" phase_workflows
+) > "$dryrun_log"
+dryrun_rc=$?
+assert_status "$dryrun_rc" 0 "phase_workflows dry-run completes with status 0"
+assert_eq "$(grep -c 'uses: actions/checkout@v8' "$wtmp/dryrun/.github/workflows/ci.yml")" "0" \
+  "phase_workflows dry-run leaves the pin untouched"
+assert_contains "$(cat "$dryrun_log")" "[dry-run] edit: bump actions/checkout@v7 -> actions/checkout@v8" \
+  "phase_workflows dry-run prints the planned edit"
+assert_eq "$(grep -c 'workflows: bumped' "$dryrun_log")" "0" \
+  "phase_workflows dry-run never claims a completed bump"
 
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
-  if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-  fi
-  exit 0
-fi
+finish_spec

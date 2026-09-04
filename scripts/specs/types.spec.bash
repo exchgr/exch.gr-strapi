@@ -12,6 +12,7 @@ source "$SPEC_DIR/../lib/types.bash"
 IFS=$' \t\n'
 
 ttmp="$(mktemp -d)"
+trap 'rm -rf "$ttmp" "$dry_yarn" "$ok_yarn" "$fail_yarn"' EXIT
 
 # --- dry-run: would-run line printed, yarn never executed ---
 dry_yarn="$(mktemp -d)"
@@ -65,13 +66,5 @@ assert_eq "$(cat "$fail_yarn/yarn.args")" "strapi ts:generate-types" \
 assert_eq "$(grep -c 'ts:generate-types failed — continuing' "$fail_err")" "1" \
   "phase_types on ts:generate-types failure warns and continues"
 
-rm -rf "$ttmp" "$dry_yarn" "$ok_yarn" "$fail_yarn"
-
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
-  if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-  fi
-  exit 0
-fi
+finish_spec

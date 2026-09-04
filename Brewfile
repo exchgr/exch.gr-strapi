@@ -7,3 +7,6 @@ brew "jq"
 brew "yq"
 brew "curl"
 brew "asdf"
+# `yq` must be the mikefarah v4 flavor (what this formula installs) —
+# scripts/lib/lookups.bash parse_uses_line depends on its syntax, and
+# scripts/lib/preflight.bash rejects the kislyuk/Python yq sharing the name.

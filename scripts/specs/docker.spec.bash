@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # scripts/specs/docker.spec.bash — spec for scripts/lib/docker.bash (dockerfile
-# phase: node LTS base-image rewrite only — the berry/COREPACK restore cases
-# were removed along with the ensure_dockerfile_* helpers they covered).
+# phase: node LTS base-image rewrite only).
 # latest_node_lts is shadowed here; its production wiring lives in
 # lookups.spec.bash — not duplicated.
 # Standalone: bash scripts/specs/docker.spec.bash
@@ -15,6 +14,7 @@ source "$SPEC_DIR/../lib/docker.bash"
 IFS=$' \t\n'
 
 dtmp="$(mktemp -d)"
+trap 'rm -rf "$dtmp"' EXIT
 
 # --- major bump: node:22-alpine rewritten to the latest LTS MAJOR alias ---
 mkdir -p "$dtmp/fresh"
@@ -48,6 +48,50 @@ assert_eq "$(grep -c 'FROM node:22-alpine' "$df")" "0" \
   "phase_dockerfile leaves no stale node:22-alpine stages"
 assert_eq "$(grep -c 'FROM node:24.99.0-alpine' "$df")" "0" \
   "phase_dockerfile never pins a patch-specific base image"
+
+# --- mixed majors across stages: EVERY distinct node:*-alpine version moves ---
+mkdir -p "$dtmp/mixed"
+cat > "$dtmp/mixed/Dockerfile" <<'EOF'
+FROM node:20-alpine AS deps
+
+RUN yarn install
+
+FROM node:22-alpine AS build
+
+COPY --from=deps /app .
+
+RUN yarn build
+
+FROM node:22-alpine
+
+CMD ["yarn", "start"]
+EOF
+(
+  latest_node_lts() { printf '24.99.0\n'; }
+  REPO_DIR="$dtmp/mixed" phase_dockerfile
+) > /dev/null
+mf="$dtmp/mixed/Dockerfile"
+assert_eq "$(grep -c 'FROM node:20-alpine' "$mf")" "0" \
+  "phase_dockerfile does not leave the older node:20-alpine stage stale"
+assert_eq "$(grep -c 'FROM node:24-alpine' "$mf")" "3" \
+  "phase_dockerfile rewrites every distinct node:*-alpine version (all stages) to the LTS major alias"
+
+# --- dry-run: the planned edit is printed, never the completed rewrite line ---
+mkdir -p "$dtmp/dryrun"
+printf 'FROM node:22-alpine\n\nRUN yarn install\n' > "$dtmp/dryrun/Dockerfile"
+cp "$dtmp/dryrun/Dockerfile" "$dtmp/dryrun-before"
+dry_log="$dtmp/dryrun-log"
+(
+  latest_node_lts() { printf '24.99.0\n'; }
+  DRY_RUN=1
+  REPO_DIR="$dtmp/dryrun" phase_dockerfile
+) > "$dry_log"
+cmp -s "$dtmp/dryrun-before" "$dtmp/dryrun/Dockerfile"
+assert_status "$?" 0 "phase_dockerfile dry-run leaves the Dockerfile byte-for-byte"
+assert_contains "$(cat "$dry_log")" "[dry-run] edit: rewrite node:22-alpine -> node:24-alpine" \
+  "phase_dockerfile dry-run prints the planned edit"
+assert_eq "$(grep -c 'base image node:22-alpine -> node:24-alpine' "$dry_log")" "0" \
+  "phase_dockerfile dry-run never claims a completed base-image rewrite"
 
 # --- real-Dockerfile shape (multi-line cache-mount RUN, COPY .yarn) already on the
 # --- latest major alias: byte-for-byte no-op — the floating alias fetches patches ---
@@ -158,13 +202,5 @@ miss_err="$dtmp/miss-err"
 assert_eq "$(grep -c 'Dockerfile not found — skipping phase' "$miss_err")" "1" \
   "phase_dockerfile warns and skips when the Dockerfile is missing"
 
-rm -rf "$dtmp"
-
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
-  if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-  fi
-  exit 0
-fi
+finish_spec

@@ -95,13 +95,9 @@ assert_eq "$dispatch_of" $'preflight\nyarn\nsummary\nDRY_RUN=1' \
 
 # --- no selection: usage on stderr, exit 2, no phases dispatched ---
 rc=0
-err="$( { main 2>&1 1>/dev/null; } )" || rc=$?
+out="$( { main 2>"$spec_tmp/nosel-err"; } )" || rc=$?
 assert_status "$rc" 2 "main with no selection exits 2"
-assert_contains "$err" "Usage:" "main with no selection prints usage to stderr"
-
-rc=0
-out="$( { main 2>/dev/null; } )" || rc=$?
-assert_status "$rc" 2 "main with no selection exits 2 on the stdout-only capture"
+assert_contains "$(cat "$spec_tmp/nosel-err")" "Usage:" "main with no selection prints usage to stderr"
 assert_eq "$out" "" "main with no selection dispatches no phases"
 
 # --- unknown flag: exit 2, no phases dispatched ---
@@ -147,10 +143,4 @@ rc=0
 assert_status "$rc" 0 "UPGRADE_SH_SOURCE_ONLY=1 suppresses main on direct execution"
 
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
-  if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-  fi
-  exit 0
-fi
+finish_spec

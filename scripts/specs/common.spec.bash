@@ -48,11 +48,25 @@ out="$( IFS=$'\n\t'; DRY_RUN=0; apply_edit 'my edit' fake_cmd arg1 arg2 )"
 assert_eq "$out" "executed: arg1 arg2" \
   "apply_edit executes the edit command under hardened IFS"
 
+# --- run: real-path failure is fatal (blast-radius contract) ---
+failcmd() { return 3; }
+rc=0
+err="$( IFS=$'\n\t'; DRY_RUN=0; run failcmd --flag value 2>&1 1>/dev/null )" || rc=$?
+assert_status "$rc" 1 "run dies when the command fails"
+assert_eq "$err" "upgrade.sh: command failed: failcmd --flag value" \
+  "run names the failing command on stderr"
+
+# --- apply_edit: real-path callback failure is fatal ---
+rc=0
+err="$( IFS=$'\n\t'; DRY_RUN=0; apply_edit 'my edit' failcmd arg1 2>&1 1>/dev/null )" || rc=$?
+assert_status "$rc" 1 "apply_edit dies when the edit callback fails"
+assert_eq "$err" "upgrade.sh: edit failed: my edit" \
+  "apply_edit names the failed edit on stderr"
+
+# --- apply_edit dry-run never executes the callback (failure path unreachable) ---
+out="$( IFS=$'\n\t' DRY_RUN=1; apply_edit 'my edit' failcmd a b )"
+assert_eq "$out" "[dry-run] edit: my edit" \
+  "apply_edit dry-run prints only the planned edit and never runs the callback"
+
 # Bottom guard: standalone run prints totals; sourced run defers to the runner.
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-  printf 'PASS: %d FAIL: %d\n' "$PASS" "$FAIL"
-  if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-  fi
-  exit 0
-fi
+finish_spec

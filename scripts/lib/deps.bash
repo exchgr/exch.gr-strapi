@@ -44,15 +44,16 @@ reconcile_strapi_react() {
   fi
 }
 
-# Reconcile one dependency against its strapi peer range: no-op (with log)
-# when the declared range's major already matches, otherwise `yarn up` to
-# `^<latest release in the target major>` (floor fallback `^<target>.0.0`
-# when the registry lookup fails). Returns 0 iff a bump was issued; skips
-# (missing peer, unparseable peer, undeclared dep) return 1; a FAILED bump
-# dies — a half-reconciled react family must not silently continue to later
-# phases.
-reconcile_dep() {
-  local dep="$1" peers="$2" peer target current current_major latest range
+# Resolve one dep's desired range against the strapi peer ranges in $2 with
+# its currently declared range $3: skip (return 1, no output) when the dep
+# has no peer entry, the peer range is unparseable, or the declared range
+# already sits in the peer-accepted major (no-op); otherwise print
+# `^<latest release in the target major>`, falling back to the
+# `^<target>.0.0` floor (with a warn) when the registry lookup fails. Skips
+# log/warn their reason. Pure except for the latest_matching_version seam,
+# which specs shadow.
+desired_range_for() {
+  local dep="$1" peers="$2" current="$3" peer target latest
   peer="$(peer_of "$peers" "$dep")"
   if [[ -z "$peer" ]]; then
     log "deps: no $dep peer range found — skipping"
@@ -62,23 +63,40 @@ reconcile_dep() {
     warn "deps: unparseable $dep peer range '$peer' — skipping"
     return 1
   fi
+  if [[ "$(peer_range_major "$current")" == "$target" ]]; then
+    log "deps: $dep '$current' already matches strapi peer range '$peer' — no-op"
+    return 1
+  fi
+  if latest="$(latest_matching_version "$dep@^$target")" && [[ -n "$latest" ]]; then
+    printf '^%s\n' "$latest"
+  else
+    warn "deps: could not resolve latest $dep@^$target — falling back to ^${target}.0.0"
+    printf '^%s.0.0\n' "$target"
+  fi
+}
+
+# Reconcile one dependency against its strapi peer range: resolve the
+# declared range, resolve the desired range (desired_range_for), then
+# `yarn up` to it. Returns 0 iff a bump was issued; skips return 1; a FAILED
+# bump dies — a half-reconciled react family must not silently continue to
+# later phases.
+reconcile_dep() {
   current="$(declared_range "$dep")"
   if [[ -z "$current" ]]; then
     log "deps: $dep not declared in package.json — skipping reconcile"
     return 1
   fi
-  current_major="$(peer_range_major "$current")" || current_major=""
-  if [[ "$current_major" == "$target" ]]; then
-    log "deps: $dep '$current' already matches strapi peer range '$peer' — no-op"
+  if ! range="$(desired_range_for "$dep" "$peers" "$current")"; then
     return 1
   fi
-  if latest="$(latest_matching_version "$dep@^$target")" && [[ -n "$latest" ]]; then
-    range="^$latest"
-  else
-    warn "deps: could not resolve latest $dep@^$target — falling back to ^${target}.0.0"
-    range="^${target}.0.0"
-  fi
+  # Re-derive peer/target for the log; both are pure and cheap.
+  local peer target
+  peer="$(peer_of "$peers" "$dep")"
+  target="$(peer_range_major "$range")"
   log "deps: strapi peer range '$peer' -> target major $target ($dep '$current' -> '$range')"
+  # run now dies itself on failure ("command failed: ..."), so this die only
+  # fires for run stubs that return non-zero without dying (spec seams); the
+  # messages never double up.
   run yarn up "$dep@$range" || die "deps: failed to bump $dep to $range"
 }
 
@@ -174,6 +192,8 @@ fetch_dependabot_alerts() {
 
 # selector: transitive
 phase_transitive() {
+  # Same as above: production run dies itself; this return-guard covers
+  # non-dying run stubs (spec seams) so the phase still fails loudly there.
   run yarn up -R '*' || return 1
   run yarn dedupe
   run yarn install

@@ -1,5 +1,5 @@
 # scripts/lib/helpers.bash — pure helpers: no network, no filesystem writes, no
-# side effects. Dependency: common.bash.
+# side effects. Dependencies: common.bash.
 # shellcheck source=scripts/lib/common.bash
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.bash"
 
@@ -8,14 +8,6 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.bash"
 semver_major() {
   local version="${1#v}"
   printf '%s\n' "${version%%.*}"
-}
-
-semver_gte() {
-  [[ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" == "$2" ]]
-}
-
-is_lts_entry() {
-  printf '%s' "$1" | jq -e '.lts != false' >/dev/null 2>&1
 }
 
 highest_vtag() {
