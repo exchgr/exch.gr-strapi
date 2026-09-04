@@ -11,9 +11,27 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/helpers.bash"
 
 # selector: deps
 phase_deps() {
+  # The react-family reconcile runs FIRST — before the blanket float — so the
+  # family's declared ranges are already pinned to the peer-accepted major when
+  # `yarn up '*'` runs. A range-constrained blanket float can then never cross
+  # the family's majors, which kills the float-then-correct dance (and its
+  # YN0060 non-overlapping-range warnings) and removes the blast radius of the
+  # reconcile dying mid-way: the erroneous major bumps no longer exist to be
+  # cleaned up, because they never happen.
+  #
+  # No drift between the pre-float peer lookup and the trio bump below: both
+  # query `@latest` from the registry (fetch_strapi_peer_deps reads
+  # @strapi/strapi@latest/@strapi/admin@latest; the trio bump targets
+  # @latest too), and the two steps run back-to-back within one phase. Strapi
+  # publishing a new latest between them would require a registry change
+  # mid-phase; even then the next deps run re-reconciles against the new peer
+  # ranges, so the family never lands out of range permanently. The reconcile
+  # target therefore always derives from strapi's peer range, never from the
+  # locally installed strapi version — coherent with reconcile_strapi_react's
+  # registry-fresh design.
+  reconcile_strapi_react || return $?
   run yarn up '*'
   run yarn up '@strapi/strapi@latest' '@strapi/plugin-graphql@latest' '@strapi/plugin-users-permissions@latest'
-  reconcile_strapi_react || return $?
   dependabot_bumps
   run yarn install
   log "deps: phase complete"
@@ -172,6 +190,9 @@ peer_range_major() {
 
 # Dependabot security bumps: the gh call is the one soften point in deps — a
 # failure warns and skips the sub-step while the rest of the phase continues.
+# Per-package bumps are classified by bump_package; a failed per-package
+# lookup is also soft (warn + skip that package), so one opaque package can
+# never abort the security sweep.
 dependabot_bumps() {
   local alerts pkgs pkg
   if ! alerts="$(fetch_dependabot_alerts)"; then
@@ -181,8 +202,37 @@ dependabot_bumps() {
   pkgs="$(printf '%s' "$alerts" | dependabot_pkgs)"
   while IFS= read -r pkg; do
     [[ -n "$pkg" ]] || continue
-    run yarn up "${pkg}@latest"
+    bump_package "$pkg"
   done <<<"$pkgs"
+}
+
+# Bump one dependabot-alerted package by its dependency class:
+# - declared in package.json -> `yarn up <pkg>@latest` (a direct dependency can
+#   be floated normally);
+# - transitive-only -> force the lockfile resolution to the latest release via
+#   `yarn set resolution <pkg>@npm:* npm:<latest>` (yarn 4 syntax: the
+#   resolution is `npm:`-prefixed). `yarn up` dies with a usage error on
+#   packages no workspace references, so a bare up would abort the run — the
+#   resolution override is the way to still honor the security intent for
+#   transitive-only alerts. A failed latest lookup warns and skips the
+#   package (soft-fail), never dies.
+bump_package() {
+  local pkg="$1" latest
+  if [[ -n "$(declared_range "$pkg")" ]]; then
+    run yarn up "${pkg}@latest"
+    return 0
+  fi
+  if latest="$(latest_version_of "$pkg")" && [[ -n "$latest" ]]; then
+    run yarn set resolution "${pkg}@npm:*" "npm:${latest}"
+  else
+    warn "deps: could not resolve latest $pkg — skipping transitive security bump"
+  fi
+}
+
+# Registry-fresh latest release of a package. Specs shadow this name or stub
+# yarn via PATH.
+latest_version_of() {
+  yarn npm info "$1@latest" --fields version --json 2>/dev/null | parse_version_field
 }
 
 # The gh call is stubbed in specs by shadowing this name directly.

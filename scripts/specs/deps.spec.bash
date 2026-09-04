@@ -246,14 +246,95 @@ assert_contains "$(cat "$bumpfail_err")" "deps: failed to bump react to ^19.2.0"
 assert_eq "$(cat "$bumpfail_calls")" "yarn up react@^19.2.0" \
   "reconcile_dep records nothing after the failed bump (no lazy yarn install)"
 
+# --- latest_version_of (production yarn wiring via PATH stub, in a subshell) ---
+lvstub="$(mktemp -d)"
+cat > "$lvstub/yarn" <<'EOF'
+#!/usr/bin/env sh
+printf '%s\n' "$*" >> "$0.args"
+printf '%s\n' '{"name":"qs","version":"6.15.3"}'
+EOF
+chmod +x "$lvstub/yarn"
+rc=0
+(
+  PATH="$lvstub:$PATH"
+  latest_version_of qs
+) > "$lvstub/out" || rc=$?
+assert_status "$rc" 0 "latest_version_of succeeds via the yarn npm info PATH stub"
+assert_eq "$(cat "$lvstub/yarn.args")" "npm info qs@latest --fields version --json" \
+  "latest_version_of queries the registry for the newest release of the package"
+assert_eq "$(cat "$lvstub/out")" "6.15.3" \
+  "latest_version_of prints the package's latest version"
+rm -rf "$lvstub"
+
+# --- bump_package: declared pkg -> yarn up @latest ---
+mkdir -p "$dtmp/bump-declared"
+printf '{"dependencies":{"react":"^18.2.1"}}\n' > "$dtmp/bump-declared/package.json"
+bump_declared_calls="$dtmp/bump-declared-calls"
+: > "$bump_declared_calls"
+(
+  run() { printf '%s\n' "$*" >> "$bump_declared_calls"; }
+  REPO_DIR="$dtmp/bump-declared" bump_package react
+)
+assert_eq "$(cat "$bump_declared_calls")" "yarn up react@latest" \
+  "bump_package bumps a package declared in package.json with yarn up @latest"
+
+# --- bump_package: transitive-only pkg -> yarn set resolution to the latest version ---
+mkdir -p "$dtmp/bump-transitive"
+printf '{"dependencies":{"react":"^18.2.1"}}\n' > "$dtmp/bump-transitive/package.json"
+bump_transitive_calls="$dtmp/bump-transitive-calls"
+: > "$bump_transitive_calls"
+(
+  run() { printf '%s\n' "$*" >> "$bump_transitive_calls"; }
+  latest_version_of() { printf '6.15.3'; }
+  REPO_DIR="$dtmp/bump-transitive" bump_package qs
+)
+assert_eq "$(cat "$bump_transitive_calls")" "yarn set resolution qs@npm:* npm:6.15.3" \
+  "bump_package forces a transitive-only package's lockfile resolution to its latest version (yarn 4 set resolution syntax)"
+
+# --- bump_package: unresolvable latest -> warn + skip, no run calls, no die ---
+mkdir -p "$dtmp/bump-lookup-fail"
+printf '{"dependencies":{"react":"^18.2.1"}}\n' > "$dtmp/bump-lookup-fail/package.json"
+bump_lookup_calls="$dtmp/bump-lookup-fail-calls"
+bump_lookup_err="$dtmp/bump-lookup-fail-err"
+: > "$bump_lookup_calls"
+bump_lookup_rc=0
+(
+  run() { printf '%s\n' "$*" >> "$bump_lookup_calls"; }
+  latest_version_of() { return 1; }
+  {
+    REPO_DIR="$dtmp/bump-lookup-fail" bump_package qs
+  } 2> "$bump_lookup_err"
+) || bump_lookup_rc=$?
+assert_status "$bump_lookup_rc" 0 \
+  "bump_package on a failed latest lookup skips the package instead of dying (soft-fail step)"
+assert_eq "$(cat "$bump_lookup_calls")" "" \
+  "bump_package on a failed latest lookup records no run calls for that package"
+assert_contains "$(cat "$bump_lookup_err")" "could not resolve latest qs" \
+  "bump_package warns when it skips a transitive bump over a failed latest lookup"
+
+# --- dependabot_bumps: declared + transitive-only alerts get their class-correct bumps ---
+mkdir -p "$dtmp/depbumps"
+printf '{"dependencies":{"react":"^18.2.1"}}\n' > "$dtmp/depbumps/package.json"
+depbumps_calls="$dtmp/depbumps-calls"
+: > "$depbumps_calls"
+(
+  run() { printf '%s\n' "$*" >> "$depbumps_calls"; }
+  fetch_dependabot_alerts() { printf '%s\n' '[{"state":"open","dependency":{"package":{"name":"react"}}},{"state":"open","dependency":{"package":{"name":"qs"}}}]'; }
+  latest_version_of() { printf '6.15.3'; }
+  REPO_DIR="$dtmp/depbumps" dependabot_bumps
+)
+assert_eq "$(cat "$depbumps_calls")" $'yarn set resolution qs@npm:* npm:6.15.3\nyarn up react@latest' \
+  "dependabot_bumps bumps declared packages with yarn up and transitive-only packages with yarn set resolution (sorted alert order)"
+
 # --- phase_deps happy path (recorder run + fixture alerts via the seam, in a subshell) ---
 # Fixture: @strapi/strapi duplicated, qs open, nanoid dismissed. dependabot_pkgs
 # (reused from helpers.bash) must dedupe to the sorted open set.
 dep_fixture='[{"state":"open","dependency":{"package":{"name":"@strapi/strapi"}}},{"state":"open","dependency":{"package":{"name":"qs"}}},{"state":"open","dependency":{"package":{"name":"@strapi/strapi"}}},{"state":"dismissed","dependency":{"package":{"name":"nanoid"}}}]'
 # Fixture package.json: react one major behind the stubbed strapi peer range so
 # the reconcile step actually fires (yarn up react + its lazy install) inside
-# the composition.
-printf '{"dependencies":{"react":"^18.0.0"}}\n' > "$dtmp/package.json"
+# the composition; @strapi/strapi is declared like the real repo so its
+# dependabot alert classifies as a direct bump.
+printf '{"dependencies":{"react":"^18.0.0","@strapi/strapi":"^5.0.0"}}\n' > "$dtmp/package.json"
 dep_calls="$dtmp/dep-calls"
 : > "$dep_calls"
 deps_out="$(
@@ -268,10 +349,34 @@ deps_out="$(
       *) return 1 ;;
     esac
   }
+  # Transitive-only dependabot alerts resolve their latest through this seam;
+  # qs is transitive in the fixture package.json (only react is declared).
+  latest_version_of() { printf '6.15.3'; }
   REPO_DIR="$dtmp" phase_deps
 )"
-assert_eq "$(cat "$dep_calls")" $'yarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn up react@^19.2.0\nyarn install\nyarn up @strapi/strapi@latest\nyarn up qs@latest\nyarn install' \
-  "phase_deps records: yarn up *, strapi trio, react reconcile (up + lazy install), deduped+ordered dependabot ups, final yarn install"
+assert_eq "$(cat "$dep_calls")" $'yarn up react@^19.2.0\nyarn install\nyarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn up @strapi/strapi@latest\nyarn set resolution qs@npm:* npm:6.15.3\nyarn install' \
+  "phase_deps reconciles the react family BEFORE the blanket float: reconcile up + lazy install, then yarn up * (capped by the pinned ranges), strapi trio, deduped+ordered dependabot ups (declared -> yarn up, transitive-only -> set resolution), final yarn install"
+
+# --- phase_deps ordering: family already pinned -> the blanket float cannot cross majors ---
+# The reconcile is a no-op (every dep already sits at its peer major), so the
+# recorded sequence starts directly at `yarn up *` — and the fixture's declared
+# react range is never rewritten, which is exactly what caps the blanket float
+# inside ^18: the range in package.json constrains `yarn up '*'`, so the family
+# can never leave its peer major even when the reconcile had nothing to do.
+mkdir -p "$dtmp/pinned"
+printf '{"dependencies":{"react":"^18.2.1"}}\n' > "$dtmp/pinned/package.json"
+pinned_calls="$dtmp/pinned-calls"
+: > "$pinned_calls"
+(
+  run() { printf '%s\n' "$*" >> "$pinned_calls"; }
+  fetch_dependabot_alerts() { printf '[]\n'; }
+  fetch_strapi_peer_deps() { printf 'react=^18.0.0\n'; }
+  REPO_DIR="$dtmp/pinned" phase_deps
+)
+assert_eq "$(cat "$pinned_calls")" $'yarn up *\nyarn up @strapi/strapi@latest @strapi/plugin-graphql@latest @strapi/plugin-users-permissions@latest\nyarn install' \
+  "phase_deps with the react family already pinned records no reconcile ups before the blanket yarn up *"
+assert_eq "$(REPO_DIR="$dtmp/pinned" declared_range react)" "^18.2.1" \
+  "phase_deps with the react family already pinned never rewrites the declared react range (the range caps the blanket float)"
 
 # --- phase_deps with gh failure: warn + skip dependabot, keep the rest of the phase ---
 gh_fail_calls="$dtmp/gh-fail-calls"
