@@ -12,9 +12,9 @@
     "upgrade": "bash scripts/upgrade.sh"
   },
   "dependencies": {
-    "@strapi/plugin-graphql": "^5.54.0",
-    "@strapi/plugin-users-permissions": "^5.54.0",
-    "@strapi/strapi": "^5.54.0",
+    "@strapi/plugin-graphql": "^5.55.1",
+    "@strapi/plugin-users-permissions": "^5.55.1",
+    "@strapi/strapi": "^5.55.1",
     "pg": "^8.23.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
