@@ -1,4 +1,4 @@
-FROM node:24-alpine AS build-base
+FROM node:26-alpine AS build-base
 
 RUN \
 		--mount=type=cache,target=/var/cache/apk\
@@ -26,7 +26,7 @@ COPY . .
 
 RUN yarn build
 
-FROM node:24-alpine
+FROM node:26-alpine
 
 WORKDIR /app
 
