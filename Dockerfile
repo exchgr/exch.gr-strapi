@@ -35,7 +35,6 @@ WORKDIR /app
 COPY --from=yarn-build /app .
 
 COPY --from=yarn /usr/local/lib/node_modules/corepack /usr/local/lib/node_modules/corepack
-COPY --from=yarn /usr/local/bin/yarn /usr/local/bin/yarn
-COPY --from=yarn /usr/local/bin/yarnpkg /usr/local/bin/yarnpkg
+RUN node /usr/local/lib/node_modules/corepack/dist/corepack.js enable --install-directory /usr/local/bin yarn
 
 CMD ["yarn", "start"]
