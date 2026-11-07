@@ -14,7 +14,6 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 COPY yarn.lock package.json .yarnrc.yml tsconfig.json ./
 COPY .yarn .yarn
 
-RUN npm install --global yarn
 RUN yarn set version berry
 
 RUN \
