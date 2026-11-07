@@ -14,6 +14,8 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 COPY yarn.lock package.json .yarnrc.yml tsconfig.json ./
 COPY .yarn .yarn
 
+RUN npm install --global corepack
+RUN corepack enable yarn
 RUN yarn set version berry
 
 RUN \
@@ -31,5 +33,9 @@ FROM node:26-alpine
 WORKDIR /app
 
 COPY --from=yarn-build /app .
+
+COPY --from=yarn /usr/local/lib/node_modules/corepack /usr/local/lib/node_modules/corepack
+COPY --from=yarn /usr/local/bin/yarn /usr/local/bin/yarn
+COPY --from=yarn /usr/local/bin/yarnpkg /usr/local/bin/yarnpkg
 
 CMD ["yarn", "start"]
